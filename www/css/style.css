@@ -1,0 +1,41 @@
+body {
+    display: flex;
+    flex-direction: column;  /* stack elements vertically */
+    justify-content: center;   /* center vertically */
+    align-items: center; /* center horizontally */
+    height: 100vh; /* full screen height */
+    margin: 0;  /* remove default margin */
+    text-align: center;  /* center text */
+    font-family: Arial, sans-serif; /* clean font */
+}
+
+h1 {
+    font-size: 64px;  /* large title */
+    margin: 0;  /* remove spacing */
+}
+
+h2 {
+    margin: 0;  /* remove spacing */
+}
+
+p {
+    font-size: 24px; 
+}
+
+img {
+    width: 500px;   /* make image bigger */
+    margin-top: 30px;   /* space above image */
+}
+
+ul {
+    list-style: none;  /* no dots in front*/
+    padding: 0;  /* remove left padding */
+}
+
+li {
+    margin: 10px 0;  /* vertical spacing */
+}
+
+a {
+    font-size: 20px;    /* make links bigger */
+}
