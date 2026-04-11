@@ -14,7 +14,7 @@ class ErrorPageNode : public ASTNode {
 
         std::map<int, std::string> getErrors() const { return errors; }
 
-        const void addErrors(int code, std::string& path);
+        void addErrors(int code, std::string& path);
 
-        std::string getPath(int code);
+        std::string getPath(int code) noexcept;
 };

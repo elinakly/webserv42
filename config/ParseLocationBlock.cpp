@@ -1,6 +1,6 @@
 #include "ConfigParser.hpp"
 
-ASTNode* ConfigParser::parseLocation()
+std::unique_ptr<ASTNode> ConfigParser::parseLocation()
 {
     std::string word = expectWord();
     if (word != "location")
@@ -8,7 +8,7 @@ ASTNode* ConfigParser::parseLocation()
 
     std::string path = expectWord();
     expect(LBRACE);
-    LocationNode* location = new LocationNode(path);
+    auto location = std::make_unique<LocationNode>(path);
 
     while (peek().type != RBRACE)
     {
@@ -16,8 +16,8 @@ ASTNode* ConfigParser::parseLocation()
             throw std::runtime_error("Unexpected end in location block");
         if (peek().type == WORD)
         {
-            ASTNode* directive = parseDirective();
-            location->addDirective(directive);
+            std::unique_ptr<ASTNode> directive = parseDirective();
+            location->addDirective(std::move(directive));
         }
         else
             throw std::runtime_error("Location: invalid token");
@@ -26,14 +26,14 @@ ASTNode* ConfigParser::parseLocation()
     return location;
 }
 
-ASTNode* ConfigParser::parseIndex()
+std::unique_ptr<ASTNode> ConfigParser::parseIndex()
 {
     std::string path = expectWord();
     expect(SEMICOLON);
-    return(new IndexNode(path));
+    return(std::make_unique<IndexNode>(path));
 }
 
-ASTNode* ConfigParser::parseAllowedMethods()
+std::unique_ptr<ASTNode> ConfigParser::parseAllowedMethods()
 {
     std::vector<std::string> methods;
 
@@ -48,5 +48,10 @@ ASTNode* ConfigParser::parseAllowedMethods()
     if (methods.empty())
         throw std::runtime_error("No methods provided");
     expect(SEMICOLON);
-    return new AllowedMethodsNode(methods);
+    return(std::make_unique<AllowedMethodsNode>(methods));
+}
+
+void LocationNode::addDirective(std::unique_ptr<ASTNode> directive) noexcept
+{
+    _directives.push_back(std::move(directive));
 }

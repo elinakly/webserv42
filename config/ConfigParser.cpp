@@ -1,11 +1,8 @@
 #include "ConfigParser.hpp"
 
-ConfigParser::ConfigParser(): _pos(0)
-{
-}
-
 ConfigParser::~ConfigParser()
 {
+    clear();
 }
 
 void ConfigParser::parse(const std::string& file_name)
@@ -25,7 +22,7 @@ void ConfigParser::parse(const std::string& file_name)
     }
 }
 
-const std::vector<ServerNode*>& ConfigParser::getServers() const
+const std::vector<std::unique_ptr<ServerNode> >& ConfigParser::getServers() const noexcept
 {
     return(_servers);
 }
@@ -38,6 +35,7 @@ void ConfigParser::tokenize(std::ifstream& file)
     {
         if (std::isspace(static_cast<unsigned char>(c)))
             continue;
+
         if (c == '{')
         {
            _tokens.push_back({LBRACE, "{"});
@@ -60,12 +58,14 @@ void ConfigParser::tokenize(std::ifstream& file)
             continue;
         }
         std::string word;
+        word += c;
 
-        while (file && !std::isspace(static_cast<unsigned char>(file.peek())) &&
-               file.peek() != '{' &&
-               file.peek() != '}' &&
-               file.peek() != ';')
+        while (file.peek() != EOF)
         {
+            char p = file.peek();
+            if (std::isspace(static_cast<unsigned char>(p)) ||
+                p == '{' || p == '}' || p == ';')
+                break;
             file.get(c);
             word += c;
         }
@@ -74,6 +74,16 @@ void ConfigParser::tokenize(std::ifstream& file)
             _tokens.push_back({WORD, word});
     }
     _tokens.push_back({END, ""});
+    // for(size_t i = 0; i < _tokens.size(); i++)
+    // {
+    //     std::cout << _tokens[i];
+    // }
+}
+
+std::ostream& operator<<(std::ostream& os, const Token& t)
+{
+    os << "[" << t.type << ", " << t.value << "]\n";
+    return os;
 }
 
 std::string ConfigParser::expectWord()
@@ -106,8 +116,10 @@ Token ConfigParser::advance()
 } //return current token AND move forward
 
 
-void ConfigParser::clear()
+void ConfigParser::clear() noexcept
 {
+    _pos = 0;
 
-
+    _servers.clear();
+    _tokens.clear();
 }

@@ -1,23 +1,26 @@
 #include "ConfigParser.hpp"
 
-ServerNode* ConfigParser::parseServer()
+std::unique_ptr<ServerNode> ConfigParser::parseServer()
 {
     if (peek().type != WORD || peek().value != "server")
         throw std::runtime_error("Expected 'server'");
     advance();
     expect(LBRACE);
-    ServerNode* server = new ServerNode();
+    auto server = std::make_unique<ServerNode>();
     while(peek().type != RBRACE)
     {
+        if (peek().type == END)
+            throw std::runtime_error("Unexpected end in server block");
+
         if(peek().type == WORD && peek().value == "location")
         {
-            ASTNode* loc = parseLocation();
-            server->addLocation(loc);
+            std::unique_ptr<ASTNode> loc = parseLocation();
+            server->addLocation(std::move(loc));
         }
         else if(peek().type == WORD)
         {
-            ASTNode* directive = parseDirective();
-            server->addDirective(directive);
+            std::unique_ptr<ASTNode> directive = parseDirective();
+            server->addDirective(std::move(directive));
         }
         else
         {
@@ -28,7 +31,7 @@ ServerNode* ConfigParser::parseServer()
     return(server);
 }
 
-ASTNode* ConfigParser::parseDirective()
+std::unique_ptr<ASTNode> ConfigParser::parseDirective()
 {
     std::string word = expectWord();
     if (word == "listen")
@@ -45,10 +48,10 @@ ASTNode* ConfigParser::parseDirective()
         return parseIndex();
     else if (word == "allowed_methods")
         return parseAllowedMethods();    
-    throw std::runtime_error("Invalid directive in server block");
+    throw std::runtime_error("Invalid directive in block");
 }
 
-ASTNode*  ConfigParser::parseListen()
+std::unique_ptr<ASTNode> ConfigParser::parseListen()
 {
     std::string value = expectWord();
 
@@ -64,40 +67,44 @@ ASTNode*  ConfigParser::parseListen()
         throw std::runtime_error("listen: port out of range");
 
     expect(SEMICOLON);
-    return(new ListenNode(port));
+    return std::make_unique<ListenNode>(port);
 }
-
-ASTNode* ConfigParser::parseRoot()
+ 
+std::unique_ptr<ASTNode> ConfigParser::parseRoot()
 {
     std::string path = expectWord();
     expect(SEMICOLON);
-    return (new RootNode(path));
+    return std::make_unique<RootNode>(path);
 }
 
-ASTNode*  ConfigParser::parseServerName()
+std::unique_ptr<ASTNode> ConfigParser::parseServerName()
 {
     std::string name = expectWord();
     expect(SEMICOLON);
-    return (new ServerNameNode(name));
+    return(std::make_unique<ServerNameNode>(name));
 }
 
-ASTNode*  ConfigParser::parseErrorPage()
+std::unique_ptr<ASTNode> ConfigParser::parseErrorPage()
 {
-    std::string error = expectWord();
-    ErrorPageNode* node = new ErrorPageNode();
+    auto node = std::make_unique<ErrorPageNode>();
     std::vector<int> codes;
 
     while (peek().type == WORD)
     {
-        std::string word = peek().value;
-        if (!std::isdigit(word[0]))
+        const std::string& word = peek().value;
+
+        if (word.empty())
+            throw std::runtime_error("error_page: empty token");
+        if (!std::isdigit(static_cast<unsigned char>(word[0])))
             break;
         for (size_t i = 0; i < word.size(); i++)
         {
-            if (!std::isdigit(word[i]))
+            if (!std::isdigit(static_cast<unsigned char>(word[i])))
                 throw std::runtime_error("error_page: invalid code");
         }
         int code = std::atoi(word.c_str());
+        if (code > 599 || code < 300)
+            throw std::runtime_error("error_page: code is out of range");
         codes.push_back(code);
         advance();
     }
@@ -106,13 +113,12 @@ ASTNode*  ConfigParser::parseErrorPage()
     std::string path = expectWord();
     expect(SEMICOLON);
     for (size_t i = 0; i < codes.size(); i++)
-    {
         node->addErrors(codes[i], path);
-    }
-    return node;
+    
+    return (node);
 }
 
-ASTNode*  ConfigParser::parseMaxBodySize()
+std::unique_ptr<ASTNode> ConfigParser::parseMaxBodySize()
 {
     std::string value = expectWord();
 
@@ -128,16 +134,5 @@ ASTNode*  ConfigParser::parseMaxBodySize()
         throw std::runtime_error("max_body_size: size out of range");
 
     expect(SEMICOLON);
-    return(new MaxBodySizeNode(size));
+    return(std::make_unique<MaxBodySizeNode>(size));
 }
-
-void ServerNode::addDirective(ASTNode* directive)
-{
-    _directives.push_back(directive);
-}
-
-void ServerNode::addLocation(ASTNode* location)
-{
-    _locations.push_back(location);
-}
-

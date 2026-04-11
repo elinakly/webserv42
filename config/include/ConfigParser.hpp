@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 #include <stdexcept>
+#include <iostream>
+#include <memory>
 
 #include "ASTNode.hpp"
 #include "ServerNode.hpp"
@@ -32,16 +34,16 @@ struct Token{
 class ConfigParser {
     private:
         size_t _pos;
-        std::vector<ServerNode*> _servers;
+        std::vector<std::unique_ptr<ServerNode>> _servers;
         std::vector<Token> _tokens;
 
 
     public:
-       ConfigParser();
-       ~ConfigParser();
+        ConfigParser() = default;
+        ~ConfigParser();
 
-       void parse(const std::string& file_name);
-       const std::vector<ServerNode*>& getServers() const;
+        void parse(const std::string& file_name);
+        const std::vector<std::unique_ptr<ServerNode> >& getServers() const noexcept;
     
     private:
         void tokenize(std::ifstream& file);
@@ -50,17 +52,19 @@ class ConfigParser {
         const Token& peek() const; //look at current token 
         Token advance(); //return current token AND move forward
 
-        ServerNode* parseServer();
+        std::unique_ptr<ServerNode> parseServer();
         
-        ASTNode* parseDirective();
-        ASTNode* parseLocation();
-        ASTNode* parseListen();
-        ASTNode* parseRoot();
-        ASTNode* parseServerName();
-        ASTNode* parseErrorPage();
-        ASTNode* parseMaxBodySize();
-        ASTNode* parseIndex();
-        ASTNode* parseAllowedMethods();
+        std::unique_ptr<ASTNode> parseDirective();
+        std::unique_ptr<ASTNode> parseLocation();
+        std::unique_ptr<ASTNode> parseListen();
+        std::unique_ptr<ASTNode> parseRoot();
+        std::unique_ptr<ASTNode> parseServerName();
+        std::unique_ptr<ASTNode> parseErrorPage();
+        std::unique_ptr<ASTNode> parseMaxBodySize();
+        std::unique_ptr<ASTNode> parseIndex();
+        std::unique_ptr<ASTNode> parseAllowedMethods();
 
-        void clear();
+        void clear() noexcept;
 };
+
+std::ostream& operator<<(std::ostream& os, const Token& t);
