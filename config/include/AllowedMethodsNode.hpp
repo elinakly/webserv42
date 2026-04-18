@@ -11,5 +11,5 @@ class AllowedMethodsNode : public ASTNode {
         AllowedMethodsNode(std::vector<std::string> methods) : _methods(methods) {}
         ~AllowedMethodsNode() = default;
         
-        std::vector<std::string> getMethods() const{ return _methods; }
+        const std::vector<std::string>& getMethods() const{ return _methods; }
 };

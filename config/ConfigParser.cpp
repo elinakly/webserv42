@@ -20,6 +20,7 @@ void ConfigParser::parse(const std::string& file_name)
         else
             throw std::runtime_error("Unexpected token");
     }
+    
 }
 
 const std::vector<std::unique_ptr<ServerNode> >& ConfigParser::getServers() const noexcept

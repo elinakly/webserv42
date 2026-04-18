@@ -1,14 +1,15 @@
 NAME = webserv
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -g
-INCLUDES := -Isrcs -Iconfig/include
+INCLUDES := -Isrcs/server/include -Iconfig/include
 
 SRCS = 	srcs/main.cpp \
 		config/ConfigParser.cpp \
 		config/ServerNode.cpp \
 		config/ParseLocationBlock.cpp \
 		config/ErrorPageNode.cpp \
-		config/ParseServerBlock.cpp 
+		config/ParseServerBlock.cpp \
+		srcs/server/master/ServerMaster.cpp 
 
 OBJS_DIR    = obj
 OBJS        = $(SRCS:%.cpp=$(OBJS_DIR)/%.o)

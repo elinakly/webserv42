@@ -11,5 +11,5 @@ class MaxBodySizeNode : public ASTNode {
         MaxBodySizeNode(int size) : _size(size) {}
         ~MaxBodySizeNode() = default;
 
-        int getSize() const { return _size; }
+        const int& getSize() const { return _size; }
 };

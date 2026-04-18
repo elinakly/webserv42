@@ -7,12 +7,12 @@
 
 class ErrorPageNode : public ASTNode {
     private:
-        std::map<int, std::string> errors;
+        std::map<int, std::string> _errors;
     public:
         ErrorPageNode() = default;
         ~ErrorPageNode() = default;
 
-        std::map<int, std::string> getErrors() const { return errors; }
+        const std::map<int, std::string>& getErrors() const { return _errors; }
 
         void addErrors(int code, std::string& path);
 

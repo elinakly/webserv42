@@ -28,6 +28,7 @@ std::unique_ptr<ServerNode> ConfigParser::parseServer()
         }
     }
     expect(RBRACE);
+    server->resolve();
     return(server);
 }
 
@@ -38,6 +39,8 @@ std::unique_ptr<ASTNode> ConfigParser::parseDirective()
         return parseListen();
     else if(word == "root")
         return parseRoot();
+    else if(word == "host")
+        return parseHost();
     else if (word == "server_name")
         return parseServerName();
     else if (word == "error_page")
@@ -47,7 +50,7 @@ std::unique_ptr<ASTNode> ConfigParser::parseDirective()
     else if (word == "index")
         return parseIndex();
     else if (word == "allowed_methods")
-        return parseAllowedMethods();    
+        return parseAllowedMethods(); 
     throw std::runtime_error("Invalid directive in block");
 }
 
@@ -63,7 +66,7 @@ std::unique_ptr<ASTNode> ConfigParser::parseListen()
 
     int port = std::atoi(value.c_str());
 
-    if (port <= 0 || port > 65535)
+    if (port <= 1024 || port > 65535)
         throw std::runtime_error("listen: port out of range");
 
     expect(SEMICOLON);
@@ -135,4 +138,46 @@ std::unique_ptr<ASTNode> ConfigParser::parseMaxBodySize()
 
     expect(SEMICOLON);
     return(std::make_unique<MaxBodySizeNode>(size));
+}
+
+std::unique_ptr<ASTNode> ConfigParser::parseHost()
+{
+    std::string host = expectWord();
+    if (host == "localhost")
+        host = "127.0.0.1";
+
+    int count = 0;
+    std::string num;
+    for (size_t i = 0; i < host.size(); i++)
+    {
+        if (i == host.size() || host[i] == '.')
+        {
+            if (num.empty())
+                throw std::runtime_error("host: invalid");
+
+            int number = std::atoi(num.c_str());
+            if (number < 0 || number > 255)
+                throw std::runtime_error("host: invalid range");
+
+            num.clear();
+            count++;
+        }
+        else if (std::isdigit(host[i]))
+        {
+            num += host[i];
+        }
+        else
+        {
+            throw std::runtime_error("host: invalid character");
+        }
+    }
+
+    if (num.empty())
+        throw std::runtime_error("host: invalid");
+
+    if (count != 3)
+        throw std::runtime_error("host: invalid format");
+
+    expect(SEMICOLON);
+    return(std::make_unique<HostNode>(host));
 }

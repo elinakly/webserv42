@@ -11,6 +11,6 @@ class ServerNameNode : public ASTNode {
         ServerNameNode(std::string name) : _name(name) {}
         ~ServerNameNode() = default;
 
-        std::string getName() const { return _name; }
+        const std::string& getName() const { return _name; }
     
 };

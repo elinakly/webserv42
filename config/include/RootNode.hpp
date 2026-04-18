@@ -11,6 +11,6 @@ class RootNode : public ASTNode {
         RootNode(std::string path) : _path(path) {}
         ~RootNode() = default;
         
-        std::string getPath() const{ return _path; }
+        const std::string& getPath() const{ return _path; }
     
 };

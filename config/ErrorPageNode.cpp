@@ -2,13 +2,13 @@
 
 void ErrorPageNode::addErrors(int code, std::string& path)
 {
-    errors[code] = path;
+    _errors[code] = path;
 }
 
 std::string  ErrorPageNode::getPath(int code) noexcept
 {
-    auto it = errors.find(code);
-    if (it == errors.end())
+    auto it = _errors.find(code);
+    if (it == _errors.end())
         return("");
     return(it->second);
 }

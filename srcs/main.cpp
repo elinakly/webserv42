@@ -1,4 +1,4 @@
-#include "ServerNode.hpp"
+#include "ServerMaster.hpp"
 #include "ConfigParser.hpp"
 
 int main(int argc, char *argv[])
@@ -13,11 +13,13 @@ int main(int argc, char *argv[])
         std::string config = (argc == 1 ? "config/config.conf" : argv[1]);
 
         ConfigParser parser;
+        ServerMaster master;
 
         parser.parse(config);
-        const std::vector<std::unique_ptr<ServerNode> >& servers = parser.getServers();
-        // server.setup(servers);
-        // server.run();
+        // const std::vector<std::unique_ptr<ServerNode>>&
+        const auto& servers = parser.getServers();
+        master.setupServers(servers);
+        master.runServers();
     }
     catch (const std::exception &e)
     {

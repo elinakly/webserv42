@@ -17,6 +17,7 @@
 #include "ServerNameNode.hpp"
 #include "IndexNode.hpp"
 #include "AllowedMethodsNode.hpp"
+#include "HostNode.hpp"
 
 enum TokenType{
     WORD,
@@ -60,6 +61,7 @@ class ConfigParser {
         std::unique_ptr<ASTNode> parseRoot();
         std::unique_ptr<ASTNode> parseServerName();
         std::unique_ptr<ASTNode> parseErrorPage();
+        std::unique_ptr<ASTNode> parseHost();
         std::unique_ptr<ASTNode> parseMaxBodySize();
         std::unique_ptr<ASTNode> parseIndex();
         std::unique_ptr<ASTNode> parseAllowedMethods();

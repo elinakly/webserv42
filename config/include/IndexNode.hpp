@@ -11,6 +11,6 @@ class IndexNode : public ASTNode {
         IndexNode(std::string path) : _path(path) {}
         ~IndexNode() = default;
         
-        std::string getPath() const{ return _path; }
+        const std::string& getPath() const{ return _path; }
     
 };

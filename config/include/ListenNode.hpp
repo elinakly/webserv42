@@ -11,5 +11,5 @@ class ListenNode : public ASTNode
     public:
         ListenNode(int port) : _port(port) {}
         ~ListenNode() = default;
-        int getPort() const { return _port; }
+        const int& getPort() const { return _port; }
 };
