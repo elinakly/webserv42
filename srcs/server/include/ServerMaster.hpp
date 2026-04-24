@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <cstring>
 #include <poll.h>
@@ -34,7 +35,8 @@ class ServerMaster
 {
     private:
         std::vector<Server> _servers;
-        std::map<int, int> listenSockets; 
+        std::map<int, Server*> listenSockets; 
+        std::map<int, int> clientToServer;
         
     public:
         ServerMaster() = default;
@@ -43,6 +45,8 @@ class ServerMaster
         void setupServers(const std::vector<std::unique_ptr<ServerNode>>& servers);
         void initSockets();
         void runServers();
+        // void initPoll();
+
 
 };
 
