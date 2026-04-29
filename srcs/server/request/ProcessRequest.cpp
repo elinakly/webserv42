@@ -30,3 +30,23 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         fds[idx].events = POLLIN | POLLOUT;
     }
 }
+
+void Client::processRequest()
+{
+    HTTPRequest request(_buffer);
+    request.parse();
+
+    HTTPResponse response;
+    _response = response.build(request);
+
+    // std::string body = "Hello 42\n";
+    // _response =
+    //     "HTTP/1.1 200 OK\r\n"
+    //     "Content-Type: text/plain\r\n"
+    //     "Content-Length: " + std::to_string(body.size()) + "\r\n"
+    //     "Connection: close\r\n"
+    //     "\r\n" +
+    //     body;
+
+    resetBytesSent();
+}

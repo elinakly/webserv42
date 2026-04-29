@@ -5,15 +5,16 @@
 
 class HTTPRequest {
 public:
-    std::string method;
-    std::string path;
-    std::string version;
+    std::string _method;
+    std::string _path;
+    std::string _version;
 
-    std::map<std::string, std::string> headers;
-    std::string body;
+    std::map<std::string, std::string> _headers;
+    std::string _body;
+    std::string _rawRequest;
 
-    HTTPRequest();
-    ~HTTPRequest();
+    HTTPRequest(std::string& rawRequest) : _rawRequest(rawRequest) {};
+    ~HTTPRequest() = default;
 
-    bool parse(const std::string& rawRequest);
+    bool parse();
 };
