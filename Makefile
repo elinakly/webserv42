@@ -9,7 +9,12 @@ SRCS = 	srcs/main.cpp \
 		config/ParseLocationBlock.cpp \
 		config/ErrorPageNode.cpp \
 		config/ParseServerBlock.cpp \
-		srcs/server/master/ServerMaster.cpp 
+		srcs/server/master/ServerMaster.cpp \
+		srcs/server/master/EventLoop.cpp \
+		srcs/server/master/Socket.cpp \
+		srcs/server/request/ProcessRequest.cpp \
+		srcs/server/response/SendResponse.cpp \
+		srcs/server/client/Client.cpp
 
 OBJS_DIR    = obj
 OBJS        = $(SRCS:%.cpp=$(OBJS_DIR)/%.o)

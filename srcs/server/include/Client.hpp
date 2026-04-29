@@ -2,27 +2,36 @@
 
 #include <string>
 
-class HTTPRequest;
-class HTTPResponse;
+class Client {
+public:
+    enum State {
+        READING,
+        WRITING,
+        DONE
+    };
 
-class Client{
-    private:
+private:
+    int _fd;
+    int _server_fd;
 
-    int fd;
-    int server_fd;
-    std::string buffer;
+    std::string _buffer;
+    std::string _response;
+    size_t _bytes_sent;
 
-    bool request_ready;
-    bool response_ready;
+    State _state;
+public:
+    Client(int fd, int server_fd)
+        : _fd(fd), _server_fd(server_fd), _bytes_sent(0), _state(READING) {}
 
-    HTTPRequest* request;
-    HTTPResponse* response;
+    const std::string& getResponse() const { return _response; }
+    size_t getBytesSent() const { return _bytes_sent; }
+    State getState() const { return _state; }
 
-    Client();
-    Client(int fd, int server_fd);
-    ~Client();
+    void setState (State state);
 
     void appendData(const char* data, int size);
     bool hasCompleteRequest() const;
-    void reset();
+    void processRequest();
+    void addBytesSent(size_t bytes);
+    void resetBytesSent();
 };

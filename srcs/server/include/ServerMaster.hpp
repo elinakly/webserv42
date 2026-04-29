@@ -13,11 +13,15 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <fcntl.h>
 
 #include "LocationNode.hpp"
 #include "ServerNode.hpp"
+#include "Client.hpp"
 
 class ServerNode;
+class Client;
 
 struct Server{
     int port;
@@ -31,12 +35,14 @@ struct Server{
     std::vector<const LocationNode*> locations;
 };
 
+
 class ServerMaster
 {
     private:
         std::vector<Server> _servers;
         std::map<int, Server*> listenSockets; 
-        std::map<int, int> clientToServer;
+        std::map<int, std::unique_ptr<Client>> clients;
+        std::vector<struct pollfd> fds;
         
     public:
         ServerMaster() = default;
@@ -45,8 +51,14 @@ class ServerMaster
         void setupServers(const std::vector<std::unique_ptr<ServerNode>>& servers);
         void initSockets();
         void runServers();
-        // void initPoll();
-
+        void initPoll();
+        void pollLoop();
+        void dispatch(struct pollfd &pfd, size_t &idx);
+        void handleAccept(int fd);
+        void addClient(int newfd, int fd);
+        void handleClient(int fd, size_t &idx);
+        void sendResponse(int fd);
+        void cleanUp(int fd, size_t &idx);
 
 };
 
