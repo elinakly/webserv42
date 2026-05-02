@@ -23,6 +23,7 @@ class Client {
         int _server_fd;
 
         std::string _buffer;
+        HTTPRequest _req;
         std::string _response;
         size_t _bytes_sent;
 
@@ -31,17 +32,17 @@ class Client {
         // std::unique_ptr<HTTPResponse> _HTTPResponse;
     public:
         Client(int fd, int server_fd)
-            : _fd(fd), _server_fd(server_fd), _bytes_sent(0), _state(READING) {}
+            : _fd(fd), _server_fd(server_fd), _buffer(), _req(), _response(), _bytes_sent(0), _state(READING) {}
         ~Client() = default;
 
         const std::string& getResponse() const { return _response; }
         const std::string& getBuffer() const {return _buffer; }
-        // HTTPRequest* getHTTPRequest() {return _HTTPRequest.get(); }
-        // HTTPResponse* getHTTPResponse() {return _HTTPResponse.get(); }
+        HTTPRequest& getRequest()  {return _req; }
         size_t getBytesSent() const { return _bytes_sent; }
         State getState() const { return _state; }
 
         void setState (State state);
+        void setResponse(const std::string& res) { _response = res; }
         
         void appendData(const char* data, int size);
         bool hasCompleteRequest() const;

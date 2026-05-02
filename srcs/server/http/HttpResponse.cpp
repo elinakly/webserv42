@@ -1,59 +1,70 @@
 #include "HttpResponse.hpp"
 
-std::string HTTPResponse::buildStatusLine(const HTTPRequest& request)
+std::string HTTPResponse::getMimeTypes(const std::string& path)
 {
-    _version = request._version;
-    _path = request._path;
-    if (_path == "/")
-    {
-        _status = "200";
-        _reasonPhrase = "OK";
-    }
-    else
-    {
-        _status = "404";
-        _reasonPhrase = "Not Found";
-    }
-    return _version + " " + _status + " " + _reasonPhrase + "\r\n";
+    if (path.size() >= 5 && path.substr(path.size() - 5) == ".html") 
+        return "text/html; charset=utf-8"; 
+    if (path.size() >= 4 && path.substr(path.size() - 4) == ".css") 
+        return "text/css; charset=utf-8"; 
+    if (path.size() >= 4 && path.substr(path.size() - 4) == ".png") 
+        return "image/png"; 
+    if (path.size() >= 4 && path.substr(path.size() - 4) == ".jpg") 
+        return "image/jpeg";
+    if (path.size() >= 4 && path.substr(path.size() - 4) == ".ico") //special image file format used for website icons (favicons)
+        return "image/x-icon"; 
+    return "application/octet-stream"; //default mime type
+}
+
+
+std::string HTTPResponse::buildStatusLine()
+{
+    return _version + " " + _status_reason + "\r\n";
+}
+
+std::string HTTPResponse::readFile(const std::string& filePath)
+{
+    std::ifstream file;
+    file.open(filePath, std::ios::binary); //open file in binary format "for png,  etc"
+    if (!file.is_open())
+        return ("");
+                //create one string starting from begining up to end (eof)
+    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 }
 
 std::string HTTPResponse::buildHeaders()
 {
-    if(_status == "200" && _path == "/")
-        _contentType = "text/html";
-    else if(_status == "404")
-        _contentType = "text/html";
+    _contentType = getMimeTypes(_path);
     _connection = "Connection: close";
-    return ("Content-Type: " + _contentType + "\r\n");
+    return ("Content-Type: " + _contentType + "\r\n" + _connection + "\r\n");
 }
 
-std::string HTTPResponse::buildBody()
+void HTTPResponse::buildBody()
 {
-    std::ifstream file;
-    file.open("www/index.html");
-    std::string buffer;
-    std::string line;
-    while (std::getline(file, line))
-    {
-        buffer += line;
-        buffer += '\n';
-    }
-    _body = buffer;
-    _contentLength = std::to_string(buffer.size());
-    return(_body);
+    _body = readFile(_path);
+
+    if (_body.empty())
+        _contentLength = "Content-Length: 0\r\n";
+    else 
+        _contentLength = "Content-Length: " + std::to_string(_body.size()) + "\r\n";
 }
 
 
-std::string HTTPResponse::build(const HTTPRequest& request)
+std::string HTTPResponse::build(const HTTPRequest& request, std::string &path, std::string& status)
 {
     std::string response;
 
-    std::string status = buildStatusLine(request);
+    _version = request._version;
+    _path = path;
+    _status_reason = status;
+
+    buildBody();
+    std::string status_line = buildStatusLine();
+    response += status_line;
     std::string headers = buildHeaders();
-    std::string body = buildBody();
-
-    response = status + headers + "Content-Length: " + _contentLength  + "\r\n" + _connection + "\r\n\r\n" + body;
-    std::cout << response;
+    response += headers;
+    response += _contentLength;
+    response += "\r\n";
+    if (!_body.empty())
+        response += _body;
     return (response);
-
 }

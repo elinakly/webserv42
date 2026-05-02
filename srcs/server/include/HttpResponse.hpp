@@ -1,16 +1,16 @@
 #pragma once
 
 #include <string>
-#include "HttpRequest.hpp"
 #include <fstream>
-#include "iostream"
+#include <iostream>
+#include <vector>
+#include "HttpRequest.hpp"
 
 class HTTPResponse 
 {
     private:
-        std::string _status;
+        std::string _status_reason;
         std::string _version;
-        std::string _reasonPhrase;
         std::string _body;
         std::string _contentType;
         std::string _contentLength;
@@ -21,10 +21,13 @@ class HTTPResponse
         HTTPResponse() = default;
         ~HTTPResponse() = default;
 
-        std::string getStatus() const { return _status; }
-
-        std::string build(const HTTPRequest& request);
-        std::string buildStatusLine(const HTTPRequest& request);
+        std::string getStatus() const { return _status_reason; }
+        std::string build(const HTTPRequest& request, std::string &path, std::string& status);
+        std::string buildStatusLine();
         std::string buildHeaders();
-        std::string buildBody();
+        void buildBody();
+        std::string getMimeTypes(const std::string& path);
+        std::string readFile(const std::string& filePath);
+
+
 };

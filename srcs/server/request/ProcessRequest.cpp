@@ -26,6 +26,14 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     if (client.hasCompleteRequest())
     {
         client.processRequest();
+
+        HTTPRequest &req = client.getRequest();
+        std::string filePath = req.getPath();
+        std::string status = req._status_reason;
+
+        HTTPResponse response;
+        client.setResponse(response.build(req, filePath, status));
+        
         client.setState(Client::WRITING);
         fds[idx].events = POLLIN | POLLOUT;
     }
@@ -33,20 +41,8 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
 void Client::processRequest()
 {
-    HTTPRequest request(_buffer);
-    request.parse();
-
-    HTTPResponse response;
-    _response = response.build(request);
-
-    // std::string body = "Hello 42\n";
-    // _response =
-    //     "HTTP/1.1 200 OK\r\n"
-    //     "Content-Type: text/plain\r\n"
-    //     "Content-Length: " + std::to_string(body.size()) + "\r\n"
-    //     "Connection: close\r\n"
-    //     "\r\n" +
-    //     body;
+    _req = HTTPRequest(_buffer);
+    _req.parse(); //make parser
 
     resetBytesSent();
 }
