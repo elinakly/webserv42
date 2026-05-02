@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "LocationNode.hpp"
 #include "ServerNode.hpp"
@@ -43,10 +44,13 @@ class ServerMaster
         std::map<int, Server*> listenSockets; 
         std::map<int, std::unique_ptr<Client>> clients;
         std::vector<struct pollfd> fds;
+        static volatile sig_atomic_t _running;
         
     public:
         ServerMaster() = default;
         ~ServerMaster();
+
+        static void handler(int signal);
 
         void setupServers(const std::vector<std::unique_ptr<ServerNode>>& servers);
         void initSockets();
@@ -59,6 +63,7 @@ class ServerMaster
         void handleClient(int fd, size_t &idx);
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
+        // void shutdownServer();
 
 };
 

@@ -70,6 +70,11 @@ void ServerMaster::pollLoop()
     int ready = poll(fds.data(), fds.size(), -1); // number of ready sockets 
     if (ready < 0)
     {
+        // if (errno == EINTR)
+        // {
+        //     _running = false;
+        //     return;
+        // }
         perror("poll");
         return;
     }

@@ -1,10 +1,18 @@
 #include "ServerMaster.hpp"
 
+volatile sig_atomic_t ServerMaster::_running = true;
+
+
 ServerMaster::~ServerMaster()
 {
     
 }
 
+void ServerMaster::handler(int signal)
+{
+    (void)signal;
+    _running = false;
+}
 
 void ServerMaster::setupServers(const std::vector<std::unique_ptr<ServerNode>>& servers)
 {
@@ -37,11 +45,20 @@ void ServerMaster::setupServers(const std::vector<std::unique_ptr<ServerNode>>& 
 
 void ServerMaster::runServers()
 {
+    struct sigaction sigIntAction{};
+    sigIntAction.sa_handler = ServerMaster::handler;
+    sigemptyset(&sigIntAction.sa_mask);
+    sigIntAction.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntAction, nullptr);
+
     // add server sockets
     initPoll();
 
-    while (true)
+    while (_running)
     {
         pollLoop();
     }
+
+    // shutdownServer();
 }
