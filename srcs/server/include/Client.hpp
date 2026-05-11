@@ -37,9 +37,10 @@ class Client {
 
         const std::string& getResponse() const { return _response; }
         const std::string& getBuffer() const {return _buffer; }
-        HTTPRequest& getRequest()  {return _req; }
+        HTTPRequest& getRequest()  { return _req; }
         size_t getBytesSent() const { return _bytes_sent; }
         State getState() const { return _state; }
+        int getServerFd() const { return _server_fd; }
 
         void setState (State state);
         void setResponse(const std::string& res) { _response = res; }
