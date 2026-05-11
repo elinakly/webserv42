@@ -20,7 +20,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         cleanUp(fd, idx);
         return;
     }
-
     Client &client = *it->second; //client& = std::unique_ptr<Client>>
     client.appendData(buffer, bytes);
     if (client.hasCompleteRequest())
@@ -28,8 +27,9 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         client.processRequest();
 
         HTTPRequest &req = client.getRequest();
+        Server *config = listenSockets[client.get]
         std::string filePath = req.getPath();
-        std::string status = req._status_reason;
+        std::string status = req.getStatusReason();
 
         HTTPResponse response;
         client.setResponse(response.build(req, filePath, status));
@@ -41,8 +41,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
 void Client::processRequest()
 {
-    _req = HTTPRequest(_buffer);
+    _req = HTTPRequest(_buffer);    
     _req.parse(); //make parser
-
     resetBytesSent();
 }

@@ -11,6 +11,7 @@ class HTTPRequest {
 		std::string	_body;
 		std::string	_rawRequest;
 		std::string	_req;
+		std::string _status_reason;
 		std::map<std::string, std::string>_headers;
 	public:
 		// void	setMethod(std::string method);
@@ -22,16 +23,17 @@ class HTTPRequest {
 		// void	setHeaders(std::map<std::string, std::string>headers);
 
 		// std::string	getMethod();
-		std::string	getPath();
-		// std::string	getVersion();
+		const std::string	getPath() const;
+		const std::string getStatusReason() const;
+		const std::string	getVersion() const;
 		// std::string	getBody();
 		// std::string	getRawRequest();
 		// std::string	getRequest();
 		// std::map<std::string, std::string> getHeaders();
 
 		HTTPRequest();
-		~HTTPRequest();
-		HTTPRequest(std::string &other); 
+		~HTTPRequest() {};
+		HTTPRequest(std::string &string);
 
 		bool	parse();
 };

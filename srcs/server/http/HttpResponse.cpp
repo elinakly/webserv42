@@ -53,7 +53,7 @@ std::string HTTPResponse::build(const HTTPRequest& request, std::string &path, s
 {
     std::string response;
 
-    _version = request._version;
+    _version = request.getVersion();
     _path = path;
     _status_reason = status;
 

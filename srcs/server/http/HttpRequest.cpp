@@ -1,7 +1,24 @@
 #include "HttpRequest.hpp"
 
 #include <sstream>
+#include <iostream> 
+const std::string HTTPRequest::getVersion() const
+{
+    return(_version);
+}
+HTTPRequest::HTTPRequest(std::string &string)
+{
+    _rawRequest = string;
+}
+const std::string HTTPRequest::getStatusReason() const
+{
+    return(_status_reason);
+}
 
+const std::string HTTPRequest::getPath() const
+{
+    return(_path);
+}
 // static std::string sanitizeTargetToPath(const std::string& target)
 // {
 //     if (target.empty() || target[0] != '/')
@@ -60,5 +77,6 @@ bool HTTPRequest::parse()
 		if (!key.empty())
 			_headers[key] = value;
 	}
+    
 	return(true);
 }

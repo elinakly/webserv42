@@ -64,6 +64,8 @@ class ServerMaster
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
         // void shutdownServer();
+        bool routing();
 
 };
+const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath);
 
