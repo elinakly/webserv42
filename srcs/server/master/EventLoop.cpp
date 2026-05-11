@@ -46,11 +46,11 @@ void ServerMaster::dispatch(struct pollfd &pfd, size_t &idx)
     auto it = clients.find(fd);
     if (it == clients.end())
         return;
-    Client &client = *clients[fd];
+    Client &client = *it->second;
 
     if (pfd.revents & POLLIN && (client.getState() == Client::READING)) //read (recv())
         handleClient(fd, idx);
-
+        
     if (pfd.revents & POLLOUT && (client.getState() == Client::WRITING)) 
     {
         sendResponse(fd);   //write (send())
