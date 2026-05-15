@@ -22,17 +22,17 @@ class HTTPRequest {
 		// void	setRequest(std::string request);
 		// void	setHeaders(std::map<std::string, std::string>headers);
 
-		// std::string	getMethod();
+		std::string	getMethod() {return(_method);};
 		const std::string	getPath() const;
-		const std::string getStatusReason() const;
+		const std::string 	getStatusReason() const;
 		const std::string	getVersion() const;
-		// std::string	getBody();
+		const std::string	getBody() const {return(_body);};
 		// std::string	getRawRequest();
-		// std::string	getRequest();
+		const std::string	getRequest() const {return(_req);};
 		// std::map<std::string, std::string> getHeaders();
 
-		HTTPRequest();
-		~HTTPRequest() {};
+		HTTPRequest() = default;
+		~HTTPRequest() = default;
 		HTTPRequest(std::string &string);
 
 		bool	parse();

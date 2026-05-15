@@ -19,30 +19,6 @@ const std::string HTTPRequest::getPath() const
 {
     return(_path);
 }
-// static std::string sanitizeTargetToPath(const std::string& target)
-// {
-//     if (target.empty() || target[0] != '/')
-//         return "";
-
-//     std::string cleanTarget = target;
-
-//     size_t queryPos = cleanTarget.find('?');
-//     if (queryPos != std::string::npos)
-//         cleanTarget.erase(queryPos);
-
-//     if (cleanTarget.find("..") != std::string::npos)
-//         return "";
-
-//     if (cleanTarget == "/")
-//         return "./www/index.html";
-
-//     if (cleanTarget == "/")
-//         return "./www/index.html";
-//     if (cleanTarget == "/errors/404")
-//         return "./www/errors/404_not_found.html";
-
-//     return "./www" + cleanTarget;
-// }
 
 HTTPRequest::HTTPRequest() : _rawRequest("") {}
 
@@ -53,13 +29,24 @@ bool HTTPRequest::parse()
 	if (!std::getline(lineReader, string)) // Reading lineReader till the \n
 		return(false);
 	std::istringstream stringReader(string); 
-	if (! (stringReader >> _method >> _path >> _version)) // Reading "GET" "/" "HTTP(version)"
+	if (!(stringReader >> _method >> _path >> _version)) // Reading "GET" "/" "HTTP(version)"
 		return(false);
+	//checking methods
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+	{
+		_status_reason = "405 Method Not Allowed";
+		return(false);
+	}
 	while (std::getline(lineReader, string)) // reading whole header
 	{
+		//if end of the header, than header is completed
 		if (string.empty() || string == "\r")
 			break ;
+		//getting a key-value 
 		size_t pos = string.find(":");
+		if (pos == std::string::npos)
+			return (false);
+		//getting rid of the spaces 
 		std::string key = string.substr(0, pos);
 		std::string value = string.substr(pos + 1);
 		size_t	FkeyTrim = key.find_first_not_of(" \t\n\r");
@@ -74,9 +61,34 @@ bool HTTPRequest::parse()
 			value = value.substr(FvalTrim, (LvalTrim - FvalTrim + 1));
 		else
 			value = "";
+		//placing it in the map
 		if (!key.empty())
 			_headers[key] = value;
 	}
-    
+	//Body parsing
+	
+    std::string	body;
+	//reading everything that left in the header
+	while (std::getline(lineReader, string))
+	{
+		body += string;
+		if (!lineReader.eof())
+			body += "\n";
+	}
+	//placing it in the body
+	//not http safe get rid of getline in the future
+	_body = body;
+	std::map<std::string, std::string>::iterator it;
+	//checking for the content length
+	it = _headers.find("Content-Length");
+	//if there body
+	if (it != _headers.end())
+	{
+		int	expected = std::atoi(it->second.c_str());
+		//checking the size of content length and comperes it
+		if ((int)_body.size() != expected)
+		//if content length is not equals to the size of the body than returns false
+			return (false);
+	}
 	return(true);
 }

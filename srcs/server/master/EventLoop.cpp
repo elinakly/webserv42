@@ -1,5 +1,6 @@
 #include "ServerMaster.hpp"
-
+#include "RootNode.hpp"
+#include "IndexNode.hpp"
 
 void ServerMaster::initPoll()
 {
