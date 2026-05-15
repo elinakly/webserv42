@@ -1,28 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <!--  tells the browser how to interpret the bytes of your HTML file as characters.-->
     <meta charset="UTF-8">
-    <!-- Page title  -->
-    <title>My Web Server</title>
-     <!-- link CSS file -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webserv</title>
     <link rel="stylesheet" href="/css/style.css">
-</head>
+
 <body>
 
-    <h1>Welcome 👋</h1>
-    <p>If you can see this, your server is working correctly.</p>
+<div class="noise"></div>
 
-    <h2>Test Links</h2>
-    <!-- 
-        ul - unsorted list
-        li - list item
-        a - link  -->
-    <ul>
-        <li><a href="errors/404_not_found.html">Test 404</a></li>
-        <li><a href="errors/403_forbidden.html">Test 403</a></li>
-        <li><a href="errors/500_internal_server_error.html">Test 500</a></li>
-    </ul>
-    <img src="/errors/images/index.png" alt="index">
+<div class="container">
+
+    <section class="hero">
+
+        <div class="left">
+
+            <div class="tag">
+                ✦ HTTP/1.1 • poll() • C++
+            </div>
+
+            <h1>
+                your <span class="gradient">webserv</span><br>
+                is alive.
+            </h1>
+
+            <p>
+                A custom HTTP server built from scratch with sockets,
+                non-blocking I/O and event-driven architecture.
+                If you're seeing this page — everything works ✨
+            </p>
+
+            <div class="buttons">
+                <a class="btn primary" href="/errors/404_not_found.html">
+                    test errors
+                </a>
+
+                <a class="btn secondary" href="/errors/500_internal_server_error.html">
+                    chaos mode
+                </a>
+            </div>
+
+        </div>
+
+        <div class="right">
+
+            <div class="card">
+
+                <div class="status">
+                    ● server online
+                </div>
+
+                <img src="/errors/images/index.png" alt="Funny cat">
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="footer">
+        built with pain, sockets and caffeine ☕
+    </div>
+
+</div>
+
 </body>
 </html>

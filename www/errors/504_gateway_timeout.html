@@ -1,14 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>504 GATEWAY TIMEOUT</title>
+    <meta charset="UTF-8">
+    <title>504 Gateway Timeout</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
 
-    <h1>504 GATEWAY TIMEOUT</h1>
-    <p>The server did not receive a timely response from the upstream server.</p>
-    <img src="./images/504_gateway_timeout.png" alt="504 error">
+<body class="error-page">
+
+    <div class="background-glow glow-purple"></div>
+    <div class="background-glow glow-blue"></div>
+
+    <div class="error-container">
+
+        <div class="error-code">504</div>
+
+        <h1>GATEWAY TIMEOUT</h1>
+
+        <p>
+            The upstream server took too long to respond.<br>
+            The request is waiting… and waiting… and the cat fell asleep 😴🐱
+        </p>
+
+        <img src="./images/504_gateway_timeout.png" alt="504 error">
+
+        <a href="/" class="home-button">← Return Home</a>
+
+    </div>
 
 </body>
 </html>
