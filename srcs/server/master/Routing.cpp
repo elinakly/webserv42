@@ -1,9 +1,9 @@
 #include "ServerMaster.hpp"
 
-bool	ServerMaster::routing()
-{
-	std::string mathingServers;
-}
+// bool	ServerMaster::routing()
+// {
+// 	std::string mathingServers;
+// }
 const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath)
 {
 	const LocationNode	*bestLocation = nullptr;
@@ -20,5 +20,5 @@ const LocationNode*	findBestLocation(const Server &server, const std::string & r
 				bestLocation = locationPtr;
 			}
 	}
-
+	return bestLocation;
 }

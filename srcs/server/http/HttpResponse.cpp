@@ -49,7 +49,7 @@ void HTTPResponse::buildBody()
 }
 
 
-std::string HTTPResponse::build(const HTTPRequest& request, std::string &path, std::string& status)
+std::string HTTPResponse::build(const HTTPRequest& request, const std::string &path, const std::string& status)
 {
     std::string response;
 

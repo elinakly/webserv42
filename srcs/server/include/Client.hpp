@@ -22,7 +22,6 @@ class Client {
     private:
         int _fd;
         int _server_fd;
-        Server * _serverConfig;
 
         std::string _buffer;
         HTTPRequest _req;

@@ -22,7 +22,7 @@ class HTTPResponse
         ~HTTPResponse() = default;
 
         std::string getStatus() const { return _status_reason; }
-        std::string build(const HTTPRequest& request, std::string &path, std::string& status);
+        std::string build(const HTTPRequest& request, const std::string &path, const std::string& status);
         std::string buildStatusLine();
         std::string buildHeaders();
         void buildBody();

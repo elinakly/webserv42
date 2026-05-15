@@ -12,6 +12,7 @@ SRCS = 	srcs/main.cpp \
 		srcs/server/master/ServerMaster.cpp \
 		srcs/server/master/EventLoop.cpp \
 		srcs/server/master/Socket.cpp \
+		srcs/server/master/Routing.cpp \
 		srcs/server/request/ProcessRequest.cpp \
 		srcs/server/http/HttpRequest.cpp \
 		srcs/server/http/HttpResponse.cpp \

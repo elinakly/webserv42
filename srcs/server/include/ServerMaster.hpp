@@ -16,6 +16,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #include "LocationNode.hpp"
 #include "ServerNode.hpp"
@@ -36,6 +37,8 @@ struct Server{
     std::vector<const LocationNode*> locations;
 };
 
+
+const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath);
 
 class ServerMaster
 {
@@ -64,8 +67,10 @@ class ServerMaster
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
         // void shutdownServer();
-        bool routing();
+        std::string findLocationRoot(const LocationNode * location, Server *config);
+        std::string findLocationIndex(const LocationNode *location, Server *config);
+        std::string buildFilePath(const std::string &root, const std::string &requestPath, std::string &index, std::string status);
+        std::string handleErrorPage(Server *config, const std::string &root);
 
 };
-const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath);
 
