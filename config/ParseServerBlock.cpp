@@ -29,6 +29,11 @@ std::unique_ptr<ServerNode> ConfigParser::parseServer()
     }
     expect(RBRACE);
     server->resolve();
+    for (auto &loc : server->getLocations())
+    {
+        if (LocationNode* location = dynamic_cast<LocationNode*>(loc.get()))
+            location->resolve(*server);
+    }
     return(server);
 }
 
@@ -50,7 +55,9 @@ std::unique_ptr<ASTNode> ConfigParser::parseDirective()
     else if (word == "index")
         return parseIndex();
     else if (word == "allowed_methods")
-        return parseAllowedMethods(); 
+        return parseAllowedMethods();
+    else if (word == "return") 
+        return parseReturn();
     throw std::runtime_error("Invalid directive in block");
 }
 

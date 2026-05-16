@@ -58,5 +58,5 @@ void ServerNode::resolve()
     if (_methods.empty())
         _methods = {"GET", "POST", "DELETE"};
     if (_host.empty())
-        _host = "0.0.0.0";
+        _host = "127.0.0.1";
 }
