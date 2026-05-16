@@ -2,30 +2,30 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 
-std::string ServerMaster::findLocationRoot(const LocationNode * location, Server *config)
-{
-    std::string root = config->root_path;
-    if (!location)
-        return (root);
-    for (const auto& directives : location->getDirectives())
-    {
-        if (const RootNode* node = dynamic_cast<const RootNode*>(directives.get()))
-            return(node->getPath());
-    }
-    return(root);
-}
-std::string ServerMaster::findLocationIndex(const LocationNode *location, Server *config)
-{
-    std::string index = config->index;
-    if (!location)
-        return(index);
-    for (const auto & directives : location->getDirectives())
-    {
-        if (const IndexNode *index = dynamic_cast<const IndexNode*>(directives.get()))
-            return(index->getPath());
-    }
-    return(index);
-}
+// std::string ServerMaster::findLocationRoot(const LocationNode * location, Server *config)
+// {
+//     std::string root = config->root_path;
+//     if (!location)
+//         return (root);
+//     for (const auto& directives : location->getDirectives())
+//     {
+//         if (const RootNode* node = dynamic_cast<const RootNode*>(directives.get()))
+//             return(node->getPath());
+//     }
+//     return(root);
+// }
+// std::string ServerMaster::findLocationIndex(const LocationNode *location, Server *config)
+// {
+//     std::string index = config->index;
+//     if (!location)
+//         return(index);
+//     for (const auto & directives : location->getDirectives())
+//     {
+//         if (const IndexNode *index = dynamic_cast<const IndexNode*>(directives.get()))
+//             return(index->getPath());
+//     }
+//     return(index);
+// }
 std::string ServerMaster::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index, std::string status)
 {
     std::string filePath = root + requestPath;

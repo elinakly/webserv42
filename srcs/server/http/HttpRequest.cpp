@@ -32,10 +32,8 @@ bool HTTPRequest::parse()
 	if (!(stringReader >> _method >> _path >> _version)) // Reading "GET" "/" "HTTP(version)"
 		return(false);
 	//checking methods
-	if (_method != "GET" && _method != "POST" && _method != "DELETE")
-	{
-		_status_reason = "405 Method Not Allowed";
-	}
+
+	std::cout << _method;
 	while (std::getline(lineReader, string)) // reading whole header
 	{
 		//if end of the header, than header is completed

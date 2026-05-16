@@ -17,6 +17,13 @@ std::unique_ptr<ASTNode> ConfigParser::parseLocation()
         if (peek().type == WORD)
         {
             std::unique_ptr<ASTNode> directive = parseDirective();
+
+            if (Return* ret = dynamic_cast<Return*>(directive.get()))
+            {
+                location->setRedir(true);
+                location->setNewPath(ret->getNewPath());
+            }
+
             location->addDirective(std::move(directive));
         }
         else
@@ -49,6 +56,20 @@ std::unique_ptr<ASTNode> ConfigParser::parseAllowedMethods()
         throw std::runtime_error("No methods provided");
     expect(SEMICOLON);
     return(std::make_unique<AllowedMethodsNode>(methods));
+}
+
+std::unique_ptr<ASTNode> ConfigParser::parseReturn()
+{
+    std::string newPath;
+    while(peek().type == WORD)
+    {
+        newPath = expectWord();
+    }
+    if (newPath.empty())
+        throw std::runtime_error("No redirect path provided");
+    expect(SEMICOLON);
+    
+    return(std::make_unique<Return>(newPath));
 }
 
 void LocationNode::addDirective(std::unique_ptr<ASTNode> directive) noexcept

@@ -40,29 +40,30 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     client.processRequest();
     HTTPRequest &req = client.getRequest();
     Server *config = listenSockets[client.getServerFd()];
-    const LocationNode *location =
-        findBestLocation(*config, req.getPath());
+    // const LocationNode *location = findBestLocation(*config, req.getPath());
     std::string status = "200 OK";
-    int errorCode = 200;
-    if (req.getStatusReason() == "400 Bad Request")
-    {
-        status = "400 Bad Request";
-        errorCode = 400;
-    }
-    else if (req.getBody().size() > (size_t)config->max_body_size)
-    {
-        status = "413 Payload Too Large";
-        errorCode = 413;
-    }
+    if (req.getMethod()!= "GET" && req.getMethod() != "POST" && req.getMethod() != "DELETE")
+	{
+		req.setStatus("405 Method Not Allowed");
+	}
+    // int errorCode = 200;
+    // if (req.getStatusReason() == "400 Bad Request")
+    // {
+    //     status = "400 Bad Request";
+    //     // errorCode = 400;
+    // }
+    // else if (req.getBody().size() > (size_t)config->max_body_size)
+    // {
+    //     status = "413 Payload Too Large";
+    //     // errorCode = 413;
+    // }
+    
     // 1. ROOT
-    std::string root =
-        findLocationRoot(location, config);
+    std::string root = config->root_path;
     // 2. INDEX
-    std::string index =
-        findLocationIndex(location, config);
+    std::string index = config->index;
     // 3. BUILD PATH
-    std::string filePath =
-        buildFilePath(root, req.getPath(), index, status);
+    std::string filePath = buildFilePath(root, req.getPath(), index, status);
     // 4. ERROR PAGE
     if (status != "200 OK")
     {

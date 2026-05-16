@@ -18,6 +18,7 @@
 #include "IndexNode.hpp"
 #include "AllowedMethodsNode.hpp"
 #include "HostNode.hpp"
+#include "Return.hpp"
 
 enum TokenType{
     WORD,
@@ -65,6 +66,7 @@ class ConfigParser {
         std::unique_ptr<ASTNode> parseMaxBodySize();
         std::unique_ptr<ASTNode> parseIndex();
         std::unique_ptr<ASTNode> parseAllowedMethods();
+        std::unique_ptr<ASTNode> parseReturn();
 
         void clear() noexcept;
 };
