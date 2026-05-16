@@ -31,7 +31,7 @@ class HTTPRequest {
 		const std::string	getRequest() const {return(_req);};
 		// std::map<std::string, std::string> getHeaders();
 
-		HTTPRequest() = default;
+		HTTPRequest() ;
 		~HTTPRequest() = default;
 		HTTPRequest(std::string &string);
 

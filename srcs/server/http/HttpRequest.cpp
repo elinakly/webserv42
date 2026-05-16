@@ -35,7 +35,6 @@ bool HTTPRequest::parse()
 	if (_method != "GET" && _method != "POST" && _method != "DELETE")
 	{
 		_status_reason = "405 Method Not Allowed";
-		return(false);
 	}
 	while (std::getline(lineReader, string)) // reading whole header
 	{

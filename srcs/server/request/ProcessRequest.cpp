@@ -43,6 +43,17 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     const LocationNode *location =
         findBestLocation(*config, req.getPath());
     std::string status = "200 OK";
+    int errorCode = 200;
+    if (req.getStatusReason() == "400 Bad Request")
+    {
+        status = "400 Bad Request";
+        errorCode = 400;
+    }
+    else if (req.getBody().size() > (size_t)config->max_body_size)
+    {
+        status = "413 Payload Too Large";
+        errorCode = 413;
+    }
     // 1. ROOT
     std::string root =
         findLocationRoot(location, config);
