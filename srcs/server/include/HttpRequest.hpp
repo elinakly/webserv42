@@ -23,7 +23,7 @@ class HTTPRequest {
 		// void	setHeaders(std::map<std::string, std::string>headers);
 		void	setStatus(std::string status) {_status_reason = status;}
 
-		std::string	getMethod() {return(_method);};
+		const std::string	getMethod() const {return(_method);};
 		const std::string	getPath() const;
 		const std::string 	getStatusReason() const;
 		const std::string	getVersion() const;

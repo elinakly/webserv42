@@ -36,7 +36,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     Server *config = listenSockets[client.getServerFd()];
     std::string root = config->root_path;
     std::string index = config->index;
-    std::string filePath;
     std::string filePath = router.routeRequest(req, config);
 
     // Получаем результат из роутера
@@ -45,7 +44,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
     // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
-    client.setResponse(response.build(req, filePath));
+    client.setResponse(response.build(req, filePath, statusCode));
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }

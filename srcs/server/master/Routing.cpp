@@ -2,6 +2,7 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 #include "Router.hpp"
+#include <algorithm>
 
 
 std::string Router::routeRequest(const HTTPRequest& req, Server* config)
