@@ -21,6 +21,7 @@
 #include "LocationNode.hpp"
 #include "ServerNode.hpp"
 #include "Client.hpp"
+#include "Router.hpp"
 
 class ServerNode;
 class Client;
@@ -67,10 +68,6 @@ class ServerMaster
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
         // void shutdownServer();
-        std::string findLocationRoot(const LocationNode * location, Server *config);
-        std::string findLocationIndex(const LocationNode *location, Server *config);
-        std::string buildFilePath(const std::string &root, const std::string &requestPath, std::string &index, std::string status);
-        std::string handleErrorPage(Server *config, const std::string &root);
         bool        isMethodAllowed(const std::string &method, const LocationNode *location, Server *config);
         std::vector<std::string> getLocationMethods(const LocationNode *location);
 

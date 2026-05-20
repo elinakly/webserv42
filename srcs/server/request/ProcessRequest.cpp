@@ -1,19 +1,13 @@
 #include "ServerMaster.hpp"
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
+#include "Router.hpp"
 
-
-std::string ServerMaster::handleErrorPage(Server *config, const std::string &root)
-{
-    std::map<int, std::string>::const_iterator it = config->errors.find(404);
-    if (it != config->errors.end())
-        return(root + it->second);
-    return("www/errors/404_not_found.html");
-}
 void ServerMaster::handleClient(int fd, size_t &idx)
 {
     char buffer[4096];
     int bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
+    Router router;
 
     if (bytes <= 0)
     {
@@ -40,37 +34,18 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     client.processRequest();
     HTTPRequest &req = client.getRequest();
     Server *config = listenSockets[client.getServerFd()];
-    // const LocationNode *location = findBestLocation(*config, req.getPath());
-    std::string status = "200 OK";
-    if (req.getMethod()!= "GET" && req.getMethod() != "POST" && req.getMethod() != "DELETE")
-	{
-		req.setStatus("405 Method Not Allowed");
-	}
-    // int errorCode = 200;
-    // if (req.getStatusReason() == "400 Bad Request")
-    // {
-    //     status = "400 Bad Request";
-    //     // errorCode = 400;
-    // }
-    // else if (req.getBody().size() > (size_t)config->max_body_size)
-    // {
-    //     status = "413 Payload Too Large";
-    //     // errorCode = 413;
-    // }
-    
-    // 1. ROOT
     std::string root = config->root_path;
-    // 2. INDEX
     std::string index = config->index;
-    // 3. BUILD PATH
-    std::string filePath = buildFilePath(root, req.getPath(), index, status);
-    // 4. ERROR PAGE
-    if (status != "200 OK")
-    {
-        filePath = handleErrorPage(config, root);
-    }
+    std::string filePath;
+    std::string filePath = router.routeRequest(req, config);
+
+    // Получаем результат из роутера
+    std::string statusCode = router.getStatusCode();
+    std::string statusReason = router.getStatusReason(); // Если нужно для response.build
+
+    // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
-    client.setResponse(response.build(req, filePath, status));
+    client.setResponse(response.build(req, filePath));
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }
