@@ -98,6 +98,21 @@ std::string Router::getErrorPagePath(Server *config, const std::string &statusCo
     // if there's not than returing the main page
         return ("");
 }
+std::string Router::buildErrorResponsePath(Server *config, const std::string &statusCode)
+{
+    // 1. Try to find a configured error_page for the status code.
+    std::string errorPath = getErrorPagePath(config, statusCode);
+    if (errorPath.empty())
+        return "";
+
+    // 2. Build absolute path using server root and index fallback.
+    std::string filePath = buildFilePath(config->root_path, errorPath, config->index);
+    if (filePath.empty())
+        return "";
+
+    // 3. Return the resolved error file path for the response body.
+    return filePath;
+}
 const LocationNode*	Router::findBestLocation(const Server &server, const std::string & requestPath) 
 {
 	const LocationNode	*bestLocation = nullptr;

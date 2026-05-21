@@ -48,7 +48,7 @@ class Client {
         
         void appendData(const char* data, int size);
         bool hasCompleteRequest() const;
-        void processRequest();
+        bool processRequest();
         void addBytesSent(size_t bytes);
         void resetBytesSent();
 };

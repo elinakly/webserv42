@@ -30,12 +30,27 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
     if (!client.hasCompleteRequest())
         return;
-
-    client.processRequest();
+    bool parseOk = client.processRequest();
     HTTPRequest &req = client.getRequest();
     Server *config = listenSockets[client.getServerFd()];
     std::string root = config->root_path;
     std::string index = config->index;
+
+    // If parsing failed, respond with 400 before routing.
+    if (!parseOk)
+    {
+        std::string statusCode = "400";
+        std::string statusReason = "Bad Request";
+        std::string filePath = router.buildErrorResponsePath(config, statusCode);
+
+        HTTPResponse response;
+        std::string statusLine = statusCode + " " + statusReason;
+        client.setResponse(response.build(req, filePath, statusLine));
+        client.setState(Client::WRITING);
+        fds[idx].events = POLLIN | POLLOUT;
+        return;
+    }
+
     std::string filePath = router.routeRequest(req, config);
 
     // Получаем результат из роутера
@@ -44,16 +59,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
     // If request failed, try to serve a configured error page for the status code.
     if (statusCode != "200")
-    {
-        std::string errorPath = router.getErrorPagePath(config, statusCode);
-        if (!errorPath.empty())
-        {
-            std::string errorFilePath = router.buildFilePath(config->root_path, errorPath, config->index);
-            if (!errorFilePath.empty())
-                filePath = errorFilePath;
-        }
-    }
-
+        filePath = router.buildErrorResponsePath(config, statusCode);
     // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
     std::string statusLine = statusCode;
@@ -64,9 +70,10 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     fds[idx].events = POLLIN | POLLOUT;
 }
 
-void Client::processRequest()
+bool Client::processRequest()
 {
     _req = HTTPRequest(_buffer);    
-    _req.parse(); //make parser
+    bool ok = _req.parse(); // make parser
     resetBytesSent();
+    return ok;
 }
