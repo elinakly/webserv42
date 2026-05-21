@@ -2,6 +2,7 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 #include "Router.hpp"
+
 #include <algorithm>
 
 
@@ -23,7 +24,8 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     }
 
     // Проверяем, есть ли метод запроса в выбранном списке
-    if (std::find(methodsToCheck->begin(), methodsToCheck->end(), req.getMethod()) == methodsToCheck->end()) {
+    if (std::find(methodsToCheck->begin(), methodsToCheck->end(), req.getMethod()) == methodsToCheck->end()) 
+    {
         _statusCode = "405";
         _statusReason = "Method Not Allowed";
     }

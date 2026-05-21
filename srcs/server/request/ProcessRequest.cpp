@@ -42,9 +42,24 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     std::string statusCode = router.getStatusCode();
     std::string statusReason = router.getStatusReason(); // Если нужно для response.build
 
+    // If request failed, try to serve a configured error page for the status code.
+    if (statusCode != "200")
+    {
+        std::string errorPath = router.getErrorPagePath(config, statusCode);
+        if (!errorPath.empty())
+        {
+            std::string errorFilePath = router.buildFilePath(config->root_path, errorPath, config->index);
+            if (!errorFilePath.empty())
+                filePath = errorFilePath;
+        }
+    }
+
     // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
-    client.setResponse(response.build(req, filePath, statusCode));
+    std::string statusLine = statusCode;
+    if (!statusReason.empty())
+        statusLine += " " + statusReason;
+    client.setResponse(response.build(req, filePath, statusLine));
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }
