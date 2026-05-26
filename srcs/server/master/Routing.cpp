@@ -10,11 +10,15 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
 {
     _statusCode = "200";
     _statusReason = "OK";
+    _redirectPath.clear();
     std::string filePath;
 
     // 1. ИСПРАВЛЕНО: Проверка разрешенных методов из конфигурации
     const LocationNode* location = findBestLocation(*config, req.getPath());
     const std::vector<std::string>* methodsToCheck = &config->methods; // По умолчанию используем глобальные методы сервера
+
+    const std::string &root = location ? location->getRoot() : config->root_path;
+    std::string index = location ? location->getIndexPath() : config->index;
 
     if (location) {
         const std::vector<std::string>& locationMethods = location->getAllowedMethods();
@@ -37,11 +41,20 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _statusReason = "Payload Too Large";
     }
 
+    // 3. Редирект из location (return)
+    else if (location && location->getIsRedir())
+    {
+        _statusCode = "302";
+        _statusReason = "Found";
+        _redirectPath = location->getNewPath();
+        return "";
+    }
+
     // ... остальная часть функции ...
-    // 3. Построение пути
+    // 4. Построение пути
     if (_statusCode == "200")
     {
-        filePath = buildFilePath(config->root_path, req.getPath(), config->index);
+        filePath = buildFilePath(root, req.getPath(), index);
     }
     // ...
 

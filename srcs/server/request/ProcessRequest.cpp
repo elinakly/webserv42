@@ -38,7 +38,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
     // If parsing failed, respond with 400 before routing.
     if (!parseOk)
-    {
+    { 
         std::string statusCode = "400";
         std::string statusReason = "Bad Request";
         std::string filePath = router.buildErrorResponsePath(config, statusCode);
@@ -62,10 +62,13 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         filePath = router.buildErrorResponsePath(config, statusCode);
     // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
+    std::string extraHeaders;
+    if (statusCode == "302" && !router.getRedirectPath().empty())
+        extraHeaders = "Location: " + router.getRedirectPath() + "\r\n";
     std::string statusLine = statusCode;
     if (!statusReason.empty())
         statusLine += " " + statusReason;
-    client.setResponse(response.build(req, filePath, statusLine));
+    client.setResponse(response.build(req, filePath, statusLine, extraHeaders));
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }

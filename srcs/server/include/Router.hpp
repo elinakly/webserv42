@@ -14,6 +14,7 @@ private:
 	std::string	_statusCode;
 	std::string	_mainPath;
 	std::string	_statusReason;
+	std::string _redirectPath;
 
 public:
 	Router() = default;
@@ -21,6 +22,7 @@ public:
     void setStatusCode(std::string statusCode){_statusCode = statusCode;};
 	std::string	getStatusCode() {return(_statusCode);};
 	std::string	getStatusReason() {return(_statusReason);};
+	std::string getRedirectPath() {return(_redirectPath);};
     std::string buildFilePath(const std::string &root, const std::string &requestPath, std::string &index);
     
     // Теперь компилятор знает, что Server и LocationNode - это классы

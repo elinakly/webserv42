@@ -68,3 +68,26 @@ std::string HTTPResponse::build(const HTTPRequest& request, const std::string &p
         response += _body;
     return (response);
 }
+
+// Overload for extra headers (for redirects)
+std::string HTTPResponse::build(const HTTPRequest& request, const std::string &path, const std::string& status, const std::string &extraHeaders)
+{
+    std::string response;
+
+    _version = request.getVersion();
+    _path = path;
+    _status_reason = status;
+
+    buildBody();
+    std::string status_line = buildStatusLine();
+    response += status_line;
+    std::string headers = buildHeaders();
+    if (!extraHeaders.empty())
+        headers += extraHeaders;
+    response += headers;
+    response += _contentLength;
+    response += "\r\n";
+    if (!_body.empty())
+        response += _body;
+    return (response);
+}
