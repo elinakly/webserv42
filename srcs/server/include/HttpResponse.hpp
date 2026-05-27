@@ -27,6 +27,8 @@ class HTTPResponse
         std::string buildStatusLine();
         std::string buildHeaders();
         void buildBody();
+        void setVersion(std::string version) {_version = version;};
+        void setStatusReason(std::string statusReason){_status_reason = statusReason;};
         std::string getMimeTypes(const std::string& path);
         std::string readFile(const std::string& filePath);
 
