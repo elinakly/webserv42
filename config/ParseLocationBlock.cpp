@@ -61,15 +61,28 @@ std::unique_ptr<ASTNode> ConfigParser::parseAllowedMethods()
 std::unique_ptr<ASTNode> ConfigParser::parseReturn()
 {
     std::string newPath;
-    while(peek().type == WORD)
+    std::string code;
+
+    if (peek().type != WORD)
+        throw std::runtime_error("No redirect code provided");
+    code = expectWord();
+    for (size_t i = 0; i < code.length(); i++)
     {
-        newPath = expectWord();
+        if (!std::isdigit(static_cast<unsigned char>(code[i])))
+            throw std::runtime_error("Wrong redirect code provided");
     }
+    int Code = stoi(code);
+    if (Code != 301 && Code != 302 && Code != 307 && Code != 308)
+        throw std::runtime_error("Wrong redirect code provided");
+
+    if (peek().type != WORD)
+        throw std::runtime_error("No redirect path provided");
+    newPath = expectWord();
+    
     if (newPath.empty())
         throw std::runtime_error("No redirect path provided");
     expect(SEMICOLON);
-    
-    return(std::make_unique<Return>(newPath));
+    return(std::make_unique<Return>(newPath, Code));
 }
 
 void LocationNode::addDirective(std::unique_ptr<ASTNode> directive) noexcept
