@@ -8,7 +8,7 @@ class Server;
 class LocationNode;
 
 class Router
- {
+{
 private:
 	std::map<std::string, std::string> _mapPath;
 	std::string	_statusCode;
@@ -30,5 +30,4 @@ public:
     std::string getErrorPagePath(Server *config, const std::string &statusCode);
 	std::string buildErrorResponsePath(Server *config, const std::string &statusCode);
 	std::string routeRequest(const HTTPRequest& req, Server* config);
-	std::string respond(const HTTPRequest& req, Server* config, bool parseOk);
 };
