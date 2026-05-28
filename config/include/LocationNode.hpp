@@ -15,6 +15,7 @@ class LocationNode : public ASTNode {
         std::string _path;
         bool _isRedir;
         std::string _newPath;
+        int _code;
 
         std::vector<std::unique_ptr<ASTNode> > _directives;
 
@@ -28,6 +29,7 @@ class LocationNode : public ASTNode {
 
         const std::string& getPath() const;
         const std::string& getNewPath() const;
+        int getCode() const;
         bool getIsRedir() const;
         const std::string& getRoot() const;
         const std::string& getIndexPath() const;
@@ -36,6 +38,7 @@ class LocationNode : public ASTNode {
         
         void resolve(const ServerNode& serverNode);
         void setPath(const std::string& path);
+        void setCode(int code);
         void setNewPath(const std::string& newPath);
         void setRedir(bool isRedir);
         
