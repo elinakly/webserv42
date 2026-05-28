@@ -6,9 +6,9 @@
 class Return : public ASTNode {
     private:
         std::string _newPath;
-           int _code;
+        int _code;
     public:
-           Return(std::string newPath, int code = 0) : _newPath(newPath), _code(code) {}
+        Return(std::string newPath, int code) : _newPath(newPath), _code(code) {}
         ~Return() = default;
 
         const std::string& getNewPath() const { return _newPath; }

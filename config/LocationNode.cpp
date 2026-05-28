@@ -14,6 +14,11 @@ bool LocationNode::getIsRedir() const
     return _isRedir;
 }
 
+int LocationNode::getCode() const
+{
+    return _code;
+}
+
 void LocationNode::resolve(const ServerNode &serverNode)
 {
     _root = serverNode.getRoot();
@@ -46,6 +51,11 @@ void LocationNode::setNewPath(const std::string& newPath)
 void LocationNode::setRedir(bool isRedir)
 {  
     _isRedir = isRedir;  
+}
+
+void LocationNode::setCode(int code)
+{
+    _code = code;
 }
 
 const std::string& LocationNode::getRoot() const

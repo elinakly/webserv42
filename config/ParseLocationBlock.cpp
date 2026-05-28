@@ -22,6 +22,7 @@ std::unique_ptr<ASTNode> ConfigParser::parseLocation()
             {
                 location->setRedir(true);
                 location->setNewPath(ret->getNewPath());
+                location->setCode(ret->getCode());
             }
 
             location->addDirective(std::move(directive));
