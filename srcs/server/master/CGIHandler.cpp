@@ -1,11 +1,11 @@
-#include "CGIHandler.hpp"
+// #include "CGIHandler.hpp"
 
-void	CGIHandler::execute();
-{
+// void	CGIHandler::execute();
+// {
 
-}
+// }
 
-void	CGIHandler::setScriptPath(const std::string &path);
-{
+// void	CGIHandler::setScriptPath(const std::string &path);
+// {
 
-}
+// }
