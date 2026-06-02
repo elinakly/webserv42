@@ -6,6 +6,7 @@
 #include <map>
 
 #include "ASTNode.hpp"
+#include "CgiNode.hpp"
 
 class LocationNode;
 class DirectiveNode;
@@ -25,6 +26,7 @@ class ServerNode : public ASTNode {
 
         std::vector<std::unique_ptr<ASTNode> > _directives;
         std::vector<std::unique_ptr<ASTNode> > _locations;
+        CgiNode::cgi_map_type _cgi;
     public:
         ServerNode();
         ~ServerNode() = default;
@@ -42,6 +44,7 @@ class ServerNode : public ASTNode {
 
         const std::map<int, std::string>& getErrors() const { return _errors; }
         const std::vector<std::string>& getMethods() const {return _methods; }
+        const CgiNode::cgi_map_type& getCgi() const { return _cgi; }
         
         void addDirective(std::unique_ptr<ASTNode> directive) noexcept;
         void addLocation(std::unique_ptr<ASTNode> location) noexcept;
