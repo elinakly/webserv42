@@ -1,76 +1,92 @@
 #include "HttpRequest.hpp"
 
 #include <sstream>
-
-static std::string sanitizeTargetToPath(const std::string& target)
+#include <iostream> 
+const std::string HTTPRequest::getVersion() const
 {
-    if (target.empty() || target[0] != '/')
-        return "";
+    return(_version);
+}
+HTTPRequest::HTTPRequest(std::string &string)
+{
+    _rawRequest = string;
+}
+const std::string HTTPRequest::getStatusReason() const
+{
+    return(_status_reason);
+}
 
-    std::string cleanTarget = target;
-
-    size_t queryPos = cleanTarget.find('?');
-    if (queryPos != std::string::npos)
-        cleanTarget.erase(queryPos);
-
-    if (cleanTarget.find("..") != std::string::npos)
-        return "";
-
-    if (cleanTarget == "/")
-        return "./www/index.html";
-
-    if (cleanTarget == "/")
-        return "./www/index.html";
-    if (cleanTarget == "/errors/404")
-        return "./www/errors/404_not_found.html";
-
-    return "./www" + cleanTarget;
+const std::string HTTPRequest::getPath() const
+{
+    return(_path);
 }
 
 HTTPRequest::HTTPRequest() : _rawRequest("") {}
 
 bool HTTPRequest::parse()
 {
-    std::istringstream requestStream(_rawRequest);
-    std::string requestLine;
+	std::istringstream lineReader(_rawRequest); // Assigning lineReader to _rawRequest
+	std::string string;
+	if (!std::getline(lineReader, string)) // Reading lineReader till the \n
+		return(false);
+	std::istringstream stringReader(string); 
+	if (!(stringReader >> _method >> _path >> _version)) // Reading "GET" "/" "HTTP(version)"
+		return(false);
+	//checking methods
 
-    if (!std::getline(requestStream, requestLine))
-        return false;
-
-    if (!requestLine.empty() && requestLine[requestLine.size() - 1] == '\r')
-        requestLine.erase(requestLine.size() - 1);
-
-    std::istringstream lineStream(requestLine);
-    std::string target;
-    if (!(lineStream >> _method >> target >> _version))
-        return false;
-
-    _path = sanitizeTargetToPath(target);
-    if (_path.empty())
-    {
-        _status_reason = "400 Bad Request";
-        _path = "./www/errors/400_bad_request.html";
-        _version = "HTTP/1.1";
-        return true;
-    }
-
-    if (_method != "GET")
-    {
-        _status_reason = "405 Method Not Allowed";
-        _path = "./www/errors/405_method_not_allowed.html";
-        _version = "HTTP/1.1";
-        return true;
-    }
-
-    if (_version != "HTTP/1.1" && _version != "HTTP/1.0")
-    {
-        _status_reason = "400 Bad Request";
-        _path = "./www/errors/400_bad_request.html";
-        _version = "HTTP/1.1";
-        return true;
-    }
-
-    _version = "HTTP/1.1";
-    _status_reason = "200 OK";
-    return true;
+	std::cout << _method;
+	while (std::getline(lineReader, string)) // reading whole header
+	{
+		//if end of the header, than header is completed
+		if (string.empty() || string == "\r")
+			break ;
+		//getting a key-value 
+		size_t pos = string.find(":");
+		if (pos == std::string::npos)
+			return (false);
+		//getting rid of the spaces 
+		std::string key = string.substr(0, pos);
+		std::string value = string.substr(pos + 1);
+		size_t	FkeyTrim = key.find_first_not_of(" \t\n\r");
+		size_t	LkeyTrim = key.find_last_not_of(" \t\n\r");
+		size_t	FvalTrim = value.find_first_not_of(" \t\n\r");
+		size_t	LvalTrim = value.find_last_not_of(" \t\n\r");
+		if (FkeyTrim != std::string::npos)
+			key = key.substr(FkeyTrim, (LkeyTrim - FkeyTrim + 1));
+		else
+			key = "";
+		if (FvalTrim != std::string::npos)
+			value = value.substr(FvalTrim, (LvalTrim - FvalTrim + 1));
+		else
+			value = "";
+		//placing it in the map
+		if (!key.empty())
+			_headers[key] = value;
+	}
+	//Body parsing
+	
+    std::string	body;
+	//reading everything that left in the header
+	while (std::getline(lineReader, string))
+	{
+		body += string;
+		if (!lineReader.eof())
+			body += "\n";
+	}
+	//placing it in the body
+	//not http safe get rid of getline in the future
+	_body = body;
+	std::map<std::string, std::string>::iterator it;
+	//checking for the content length
+	it = _headers.find("Content-Length");
+	//if there body
+	if (it != _headers.end())
+	{
+		int	expected = std::atoi(it->second.c_str());
+		//checking the size of content length and comperes it
+		if ((int)_body.size() != expected)
+		//if content length is not equals to the size of the body than returns false
+			return (false);
+	}
+	return(true);
 }
+

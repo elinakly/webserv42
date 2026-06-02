@@ -5,6 +5,7 @@
 
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
+#include "ServerMaster.hpp"
 
 class HTTPRequest;
 class HTTPResponse;
@@ -34,7 +35,7 @@ class Client {
         Client(int fd, int server_fd)
             : _fd(fd), _server_fd(server_fd), _buffer(), _req(), _response(), _bytes_sent(0), _state(READING) {}
         ~Client() = default;
-
+        
         const std::string& getResponse() const { return _response; }
         const std::string& getBuffer() const {return _buffer; }
         HTTPRequest& getRequest()  { return _req; }
@@ -47,7 +48,7 @@ class Client {
         
         void appendData(const char* data, int size);
         bool hasCompleteRequest() const;
-        void processRequest();
+        bool processRequest();
         void addBytesSent(size_t bytes);
         void resetBytesSent();
 };

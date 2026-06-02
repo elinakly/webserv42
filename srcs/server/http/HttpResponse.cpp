@@ -49,11 +49,11 @@ void HTTPResponse::buildBody()
 }
 
 
-std::string HTTPResponse::build(const HTTPRequest& request, std::string &path, std::string& status)
+std::string HTTPResponse::build(const HTTPRequest& request, const std::string &path, const std::string& status)
 {
     std::string response;
 
-    _version = request._version;
+    _version = request.getVersion();
     _path = path;
     _status_reason = status;
 
@@ -61,6 +61,29 @@ std::string HTTPResponse::build(const HTTPRequest& request, std::string &path, s
     std::string status_line = buildStatusLine();
     response += status_line;
     std::string headers = buildHeaders();
+    response += headers;
+    response += _contentLength;
+    response += "\r\n";
+    if (!_body.empty())
+        response += _body;
+    return (response);
+}
+
+// Overload for extra headers (for redirects)
+std::string HTTPResponse::build(const HTTPRequest& request, const std::string &path, const std::string& status, const std::string &extraHeaders)
+{
+    std::string response;
+
+    _version = request.getVersion();
+    _path = path;
+    _status_reason = status;
+
+    buildBody();
+    std::string status_line = buildStatusLine();
+    response += status_line;
+    std::string headers = buildHeaders();
+    if (!extraHeaders.empty())
+        headers += extraHeaders;
     response += headers;
     response += _contentLength;
     response += "\r\n";

@@ -1,4 +1,6 @@
 #include "ServerMaster.hpp"
+#include "RootNode.hpp"
+#include "IndexNode.hpp"
 
 volatile sig_atomic_t ServerMaster::_running = true;
 

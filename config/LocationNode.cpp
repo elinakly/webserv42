@@ -67,6 +67,10 @@ const std::vector<std::string>& LocationNode::getMethods() const
     return _methods;
 }
 
+const std::vector<std::string>& LocationNode::getAllowedMethods() const
+{
+    return _methods;
+}
 const CgiNode::cgi_map_type& LocationNode::getCgi() const
 {
     return _cgi;

@@ -34,6 +34,7 @@ class LocationNode : public ASTNode {
         const std::string& getRoot() const;
         const std::string& getIndexPath() const;
         const std::vector<std::string>& getMethods() const;
+        const std::vector<std::string>& getAllowedMethods() const;
         const CgiNode::cgi_map_type& getCgi() const;
         
         void resolve(const ServerNode& serverNode);

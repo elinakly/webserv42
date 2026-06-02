@@ -16,10 +16,12 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #include "LocationNode.hpp"
 #include "ServerNode.hpp"
 #include "Client.hpp"
+#include "Router.hpp"
 
 class ServerNode;
 class Client;
@@ -36,6 +38,8 @@ struct Server{
     std::vector<const LocationNode*> locations;
 };
 
+
+const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath);
 
 class ServerMaster
 {
@@ -64,6 +68,8 @@ class ServerMaster
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
         // void shutdownServer();
+        bool        isMethodAllowed(const std::string &method, const LocationNode *location, Server *config);
+        std::vector<std::string> getLocationMethods(const LocationNode *location);
 
 };
 

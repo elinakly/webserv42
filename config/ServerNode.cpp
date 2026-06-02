@@ -23,28 +23,36 @@ void ServerNode::addLocation(std::unique_ptr<ASTNode> location) noexcept
     _locations.push_back(std::move(location));
 }
 
-#include "ConfigParser.hpp"
-
-//This function os called when parser finds "CGI"
-std::unique_ptr<ASTNode> ConfigParser::parseCgi()
+void ServerNode::resolve()
 {
-	//creating a node container
-    auto cgiNode = std::make_unique<CgiNode>();
-	//reading a string per peers, while we are not found ";"
-    while (peek().type == WORD)
+    for (size_t i = 0; i < _directives.size(); i++)
     {
-		//waiting for the ".py"
-        std::string extension = expectWord();
-		//waiting for "/usr/bin/python3"
-        std::string path = expectWord();
-		//adding it to the node
-        cgiNode->addCgi(extension, path);
-    }
-	//at the end theres always supposed to be ";"
-    expect(SEMICOLON);
-    return cgiNode;
-}
+        ASTNode* node = _directives[i].get();
 
+        if (ListenNode* listen = dynamic_cast<ListenNode*>(node))
+            _port = listen->getPort();
+        else if (RootNode* root = dynamic_cast<RootNode*>(node))
+            _root = root->getPath();
+        else if (ServerNameNode* name = dynamic_cast<ServerNameNode*>(node))
+            _server_name = name->getName();
+        else if (MaxBodySizeNode* body = dynamic_cast<MaxBodySizeNode*>(node))
+            _max_body_size = body->getSize();
+        else if (ErrorPageNode* err = dynamic_cast<ErrorPageNode*>(node))
+        {
+            const std::map<int, std::string>& errs = err->getErrors();
+            _errors.insert(errs.begin(), errs.end());
+        }
+        else if (AllowedMethodsNode* methods = dynamic_cast<AllowedMethodsNode*>(node))
+            _methods = methods->getMethods();
+        else if (IndexNode* index = dynamic_cast<IndexNode*>(node))
+            _index_path = index->getPath();
+        else if (HostNode* host = dynamic_cast<HostNode*> (node))
+            _host = host->getHost();
+        else if (CgiNode* cgi = dynamic_cast<CgiNode*>(node))
+        {
+            if (cgi)
+                _cgi = cgi->getCgi();
+        }
     }
     if (_port == 0)
         _port = 80;
@@ -53,7 +61,11 @@ std::unique_ptr<ASTNode> ConfigParser::parseCgi()
     if (_max_body_size == 0)
         _max_body_size = 1000000;
     if (_methods.empty())
-        _methods = {"GET", "POST", "DELETE"};
+    {
+        _methods.push_back("GET");
+        _methods.push_back("POST");
+        _methods.push_back("DELETE");
+    }
     if (_host.empty())
         _host = "127.0.0.1";
 }
