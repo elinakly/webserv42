@@ -42,10 +42,33 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     }
 
     // 3. Редирект из location (return)
-    else if (location && location->new())
+    else if (location && location->getIsRedir())
     {
-        int code = location->getIsRedir();
-
+        int code = location->getCode();
+        switch (code)
+        {
+            case (301):
+                _statusCode = "301";
+                _statusReason = "Moved Permanently";
+            break ;
+            case (302):
+                _statusCode = "302";
+                _statusReason = "Found";
+                break ;
+            case (307):
+                _statusCode = "307";
+                _statusReason = "Temporary Redirected";
+                break ;
+            case (308):
+            _statusCode = "308";
+            _statusReason = "Moved Permanetly";
+            break ;
+            default:
+                _statusCode = "302";
+                _statusReason = "Found";
+            break ;
+        }
+        _redirectPath = location->getNewPath();
         return "";
     }
 
