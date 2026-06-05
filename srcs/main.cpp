@@ -3,6 +3,7 @@
 
 int main(int argc, char *argv[])
 {
+    HTTPRequest request;
     if (argc > 2)
     {
         std::cerr << "Usage: ./webserv <config_file>\n";

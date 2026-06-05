@@ -6,6 +6,7 @@
 #include <map>
 #include <iostream>
 #include <vector>
+#include <string.h>
 
 
 class CgiHandler
