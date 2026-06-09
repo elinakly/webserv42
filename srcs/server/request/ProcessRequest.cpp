@@ -3,6 +3,7 @@
 #include "IndexNode.hpp"
 #include "Router.hpp"
 #include "HttpRequest.hpp"
+#include "CgiHandler.hpp"
 
 void ServerMaster::handleClient(int fd, size_t &idx)
 {

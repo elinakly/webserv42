@@ -52,3 +52,56 @@ char **CgiHandler::converEnvToChar()
 	env[i] = NULL;
 	return(env);
 }
+std::string CgiHandler::executeScript()
+{
+	int	pipeIn[2];
+	int	pipeOut[2];
+
+	if (pipe(pipeIn) < 0 || pipe(pipeOut) < 0)
+		throw(std::runtime_error("Pipe Failed"));
+	pid_t	pid = fork();
+	if (pid < 0)
+	{
+		close(pipeIn[0]);
+		close(pipeIn[1]);
+		close(pipeOut[0]);
+		close(pipeOut[1]);
+		throw(std::runtime_error("Fork Failed"));
+	}
+	if (pid == 0)
+	{
+		close(pipeIn[1]);
+		close(pipeOut[0]);
+		dup2(pipeIn[0], STDIN_FILENO);
+		dup2(pipeOut[1], STDOUT_FILENO);
+		close(pipeIn[0]);
+		close(pipeOut[1]);
+		char	*args[3];
+		args[0] = const_cast<char*>(_inter.c_str());
+		args[1] = const_cast<char*>(_path.c_str());
+		args[2] = NULL;
+		execve(args[0], args, converEnvToChar());
+		exit(1);
+	}
+	else
+	{
+		close(pipeIn[0]);
+		close(pipeOut[1]);
+		if (!_body.empty())
+			write(pipeIn[1], _body.c_str(), _body.size());
+		close(pipeIn[1]);
+		int	status;
+		waitpid(pid, &status, 0);
+		std::string res;
+		char	buff[1024];
+		int	bytes;
+		
+		while ((bytes = read(pipeOut[0], buff, sizeof(buff) - 1)) > 0)
+		{
+			buff[bytes] = '\0';
+			res += buff;
+		}
+		close(pipeOut[0]);
+		return(res);
+	}
+}
