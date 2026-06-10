@@ -6,7 +6,9 @@
 #include <map>
 #include <iostream>
 #include <vector>
-
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 class CgiHandler
 {
