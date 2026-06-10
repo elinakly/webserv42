@@ -9,6 +9,7 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 #include "AllowedMethodsNode.hpp"
+#include "CgiNode.hpp"
 
 class LocationNode : public ASTNode {
     private:
@@ -22,9 +23,10 @@ class LocationNode : public ASTNode {
         std::string _root;
         std::string _index_path;
         std::vector<std::string> _methods;
+        CgiNode::cgi_map_type _cgi;
 
     public:
-        LocationNode(std::string path): _path(path) , _isRedir(false){}
+        LocationNode(std::string path): _path(path) , _isRedir(false), _cgi() {}
         ~LocationNode() = default;
 
         const std::string& getPath() const;
@@ -35,6 +37,7 @@ class LocationNode : public ASTNode {
         const std::string& getIndexPath() const;
         const std::vector<std::string>& getMethods() const;
         const std::vector<std::string>& getAllowedMethods() const;
+        const CgiNode::cgi_map_type& getCgi() const;
         
         void resolve(const ServerNode& serverNode);
         void setPath(const std::string& path);

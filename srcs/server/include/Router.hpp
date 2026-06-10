@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-class Server;
+struct Server;
 class LocationNode;
 
 class Router

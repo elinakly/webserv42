@@ -19,6 +19,7 @@
 #include "AllowedMethodsNode.hpp"
 #include "HostNode.hpp"
 #include "Return.hpp"
+#include "CgiNode.hpp"
 
 enum TokenType{
     WORD,
@@ -67,6 +68,7 @@ class ConfigParser {
         std::unique_ptr<ASTNode> parseIndex();
         std::unique_ptr<ASTNode> parseAllowedMethods();
         std::unique_ptr<ASTNode> parseReturn();
+        std::unique_ptr<ASTNode> parseCgi();
 
         void clear() noexcept;
 };

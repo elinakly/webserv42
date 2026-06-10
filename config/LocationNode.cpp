@@ -24,6 +24,7 @@ void LocationNode::resolve(const ServerNode &serverNode)
     _root = serverNode.getRoot();
     _index_path = serverNode.getIndex_path();
     _methods = serverNode.getMethods();
+    _cgi = serverNode.getCgi();
 
     for (size_t i = 0; i < _directives.size(); i++)
     {
@@ -35,6 +36,11 @@ void LocationNode::resolve(const ServerNode &serverNode)
             _index_path = index->getPath();
         else if (AllowedMethodsNode* methods = dynamic_cast<AllowedMethodsNode*>(node))
             _methods = methods->getMethods();
+        else if (CgiNode* cgi = dynamic_cast<CgiNode*>(node))
+        {
+            if (cgi)
+                _cgi = cgi->getCgi();
+        }
     }
 }
 
@@ -74,4 +80,8 @@ const std::vector<std::string>& LocationNode::getMethods() const
 const std::vector<std::string>& LocationNode::getAllowedMethods() const
 {
     return _methods;
+}
+const CgiNode::cgi_map_type& LocationNode::getCgi() const
+{
+    return _cgi;
 }

@@ -9,7 +9,7 @@
 #include "HostNode.hpp"
 
 
-ServerNode::ServerNode() : _port(0), _max_body_size(0)
+ServerNode::ServerNode() : _port(0), _max_body_size(0), _cgi()
 {
 }
 
@@ -46,8 +46,10 @@ void ServerNode::resolve()
             _methods = methods->getMethods();
         else if (IndexNode* index = dynamic_cast<IndexNode*>(node))
             _index_path = index->getPath();
-        else if(HostNode* host = dynamic_cast<HostNode*> (node))
+        else if (HostNode* host = dynamic_cast<HostNode*> (node))
             _host = host->getHost();
+        else if (CgiNode* cgi = dynamic_cast<CgiNode*>(node))
+            _cgi = cgi->getCgi();
     }
     if (_port == 0)
         _port = 80;
@@ -56,7 +58,11 @@ void ServerNode::resolve()
     if (_max_body_size == 0)
         _max_body_size = 1000000;
     if (_methods.empty())
-        _methods = {"GET", "POST", "DELETE"};
+    {
+        _methods.push_back("GET");
+        _methods.push_back("POST");
+        _methods.push_back("DELETE");
+    }
     if (_host.empty())
         _host = "127.0.0.1";
 }

@@ -58,6 +58,8 @@ std::unique_ptr<ASTNode> ConfigParser::parseDirective()
         return parseAllowedMethods();
     else if (word == "return") 
         return parseReturn();
+    else if (word == "cgi")
+        return parseCgi();
     throw std::runtime_error("Invalid directive in block");
 }
 

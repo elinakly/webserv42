@@ -2,6 +2,7 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 #include "Router.hpp"
+#include "HttpRequest.hpp"
 
 void ServerMaster::handleClient(int fd, size_t &idx)
 {
