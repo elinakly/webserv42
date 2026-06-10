@@ -72,6 +72,9 @@ bool HTTPRequest::parse()
 		if (!lineReader.eof())
 			body += "\n";
 	}
+	if (_version == "HTTP/1.1")
+		if (_headers.find("Host") == _headers.end())
+			return (false);
 	//placing it in the body
 	//not http safe get rid of getline in the future
 	_body = body;

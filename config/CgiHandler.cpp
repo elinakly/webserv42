@@ -5,11 +5,17 @@ CgiHandler::CgiHandler(const HTTPRequest &request, const LocationNode &location)
 	this->_body = request.getBody();
 	this->_uri = request.getUri();
 	this->_method = request.getMethod();
-	int tmpPath;
+	size_t tmpPath;
 	std::string	extension;
 	std::map<std::string, std::string> map;
 
-	_path = location.getRoot() + request.getPath();
+	// Отделяем query string от пути
+	std::string requestPath = request.getPath();
+	size_t queryPos = requestPath.find("?");
+	if (queryPos != std::string::npos)
+		requestPath = requestPath.substr(0, queryPos);
+
+	_path = location.getRoot() + requestPath;
 
 	tmpPath = _path.rfind(".");
 	if (tmpPath == std::string::npos)
@@ -31,7 +37,7 @@ void	CgiHandler::setEnv()
 	_env["PATH_TRANSLATED"] = _path;
 	
 	std::string query = "";
-	int	pos;
+	size_t	pos;
 	if ((pos = _request.getPath().find("?")) != std::string::npos)
 		query = _request.getPath().substr(pos + 1);
 	_env["QUERY_STRING"] = query;
@@ -104,4 +110,9 @@ std::string CgiHandler::executeScript()
 		close(pipeOut[0]);
 		return(res);
 	}
+}
+
+std::string CgiHandler::execute()
+{
+	return (executeScript());
 }

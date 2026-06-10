@@ -13,8 +13,8 @@
 class CgiHandler
 {
 	private:
-		const	LocationNode &_location;
 		const	HTTPRequest &_request;
+		const	LocationNode &_location;
 
 		std::string	_uri;
 		std::string	_method;

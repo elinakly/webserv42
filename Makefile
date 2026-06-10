@@ -12,6 +12,7 @@ SRCS = 	srcs/main.cpp \
 		config/LocationNode.cpp \
 		config/CgiNode.cpp \
 		config/ParseCgi.cpp \
+		config/CgiHandler.cpp \
 		srcs/server/master/ServerMaster.cpp \
 		srcs/server/master/EventLoop.cpp \
 		srcs/server/master/Socket.cpp \

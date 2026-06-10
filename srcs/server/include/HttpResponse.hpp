@@ -24,6 +24,7 @@ class HTTPResponse
         std::string getStatus() const { return _status_reason; }
         std::string build(const HTTPRequest& request, const std::string &path, const std::string& status);
         std::string build(const HTTPRequest& request, const std::string &path, const std::string& status, const std::string &extraHeaders);
+        std::string buildCgiResponse(const HTTPRequest& request, const std::string& status, const std::string& cgiOutput);
         std::string buildStatusLine();
         std::string buildHeaders();
         void buildBody();

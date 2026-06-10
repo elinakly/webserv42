@@ -91,3 +91,25 @@ std::string HTTPResponse::build(const HTTPRequest& request, const std::string &p
         response += _body;
     return (response);
 }
+
+// Build response for CGI output
+std::string HTTPResponse::buildCgiResponse(const HTTPRequest& request, const std::string& status, const std::string& cgiOutput)
+{
+    std::string response;
+
+    _version = request.getVersion();
+    _status_reason = status;
+    _body = cgiOutput;
+    _contentType = "text/html; charset=utf-8";
+    _connection = "Connection: close";
+
+    std::string status_line = buildStatusLine();
+    response += status_line;
+    response += ("Content-Type: " + _contentType + "\r\n");
+    response += _connection + "\r\n";
+    response += ("Content-Length: " + std::to_string(_body.size()) + "\r\n");
+    response += "\r\n";
+    if (!_body.empty())
+        response += _body;
+    return (response);
+}

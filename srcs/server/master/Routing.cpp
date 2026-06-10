@@ -13,8 +13,14 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     _redirectPath.clear();
     std::string filePath;
 
+    // Отделяем query string от пути для поиска файла
+    std::string requestPath = req.getPath();
+    size_t queryPos = requestPath.find("?");
+    if (queryPos != std::string::npos)
+        requestPath = requestPath.substr(0, queryPos);
+
     // 1. ИСПРАВЛЕНО: Проверка разрешенных методов из конфигурации
-    const LocationNode* location = findBestLocation(*config, req.getPath());
+    const LocationNode* location = findBestLocation(*config, requestPath);
     const std::vector<std::string>* methodsToCheck = &config->methods; // По умолчанию используем глобальные методы сервера
 
     const std::string &root = location ? location->getRoot() : config->root_path;
@@ -76,7 +82,7 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     // 4. Построение пути
     if (_statusCode == "200")
     {
-        filePath = buildFilePath(root, req.getPath(), index);
+        filePath = buildFilePath(root, requestPath, index);
     }
     // ...
 
