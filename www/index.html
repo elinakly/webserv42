@@ -1,69 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>webserv</title>
-    <link rel="stylesheet" href="/css/style.css">
-
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>webserv browser lab</title>
+	<link rel="stylesheet" href="/css/style.css">
+</head>
 <body>
 
 <div class="noise"></div>
 
-<div class="container">
+<main class="container dashboard">
+	<header class="topbar">
+		<div class="brand">
+			<div class="brand-mark">42</div>
+			<div>
+				<div class="tag tag-inline">✦ HTTP/1.1 • poll() • C++</div>
+				<h1>
+					webserv <span class="gradient">browser lab</span>
+				</h1>
+			</div>
+		</div>
 
-    <section class="hero">
+		<p class="hero-copy">
+			A browser dashboard that mirrors the two bundled tools: <strong>tester</strong> for normal HTTP checks
+			and <strong>cgi_tester</strong> for the CGI path. Use it to run requests and inspect responses without
+			leaving the browser.
+		</p>
+	</header>
 
-        <div class="left">
+	<section class="hero">
+		<div class="left">
+			<div class="buttons">
+				<a class="btn primary" href="#tester">open tester</a>
+				<a class="btn secondary" href="#cgi-tester">open cgi_tester</a>
+			</div>
 
-            <div class="tag">
-                ✦ HTTP/1.1 • poll() • C++
-            </div>
+			<div class="stats-row">
+				<article class="stat-card">
+					<span class="stat-label">tester</span>
+					<strong>GET / POST / DELETE</strong>
+					<small>normal request flow against static and routed pages</small>
+				</article>
+				<article class="stat-card">
+					<span class="stat-label">cgi_tester</span>
+					<strong>/test.py</strong>
+					<small>CGI-specific GET and POST checks</small>
+				</article>
+				<article class="stat-card">
+					<span class="stat-label">style</span>
+					<strong>same dark neon system</strong>
+					<small>matches the existing webserv pages and error screens</small>
+				</article>
+			</div>
+		</div>
 
-            <h1>
-                your <span class="gradient">webserv</span><br>
-                is alive.
-            </h1>
+		<div class="right">
+			<div class="card preview-card">
+				<div class="status">● server online</div>
+				<img src="/errors/images/index.png" alt="Decorative webserv artwork">
+				<div class="preview-caption">
+					The UI reuses the same artwork and palette as the current site so it feels native to the project.
+				</div>
+			</div>
+		</div>
+	</section>
 
-            <p>
-                A custom HTTP server built from scratch with sockets,
-                non-blocking I/O and event-driven architecture.
-                If you're seeing this page — everything works ✨
-            </p>
+	<section class="tester-panel" id="tester">
+		<div class="panel-header">
+			<div>
+				<div class="tag tag-inline">tester</div>
+				<h2>Normal HTTP checks</h2>
+			</div>
+			<p>
+				This matches the standard tester flow: read a file, send a body, and probe DELETE behavior on allowed
+				routes.
+			</p>
+		</div>
 
-            <div class="buttons">
-                <a class="btn primary" href="/errors/404_not_found.html">
-                    test errors
-                </a>
+		<div class="tester-grid">
+			<form class="request-card" data-request-form data-method="GET">
+				<h3>GET</h3>
+				<label for="get-path">Path</label>
+				<input id="get-path" name="path" type="text" value="/" placeholder="/ or /explode/explode.html">
+				<button class="btn primary" type="submit">Run GET</button>
+			</form>
 
-                <a class="btn secondary" href="/errors/500_internal_server_error.html">
-                    chaos mode
-                </a>
-            </div>
+			<form class="request-card" data-request-form data-method="POST">
+				<h3>POST</h3>
+				<label for="post-path">Target</label>
+				<input id="post-path" name="path" type="text" value="/" placeholder="/ or /test.py">
+				<label for="post-body">Body</label>
+				<textarea id="post-body" name="body" rows="5" placeholder="type a request body">name=webserv&mode=post</textarea>
+				<button class="btn primary" type="submit">Run POST</button>
+			</form>
 
-        </div>
+			<form class="request-card" data-request-form data-method="DELETE">
+				<h3>DELETE</h3>
+				<label for="delete-path">Target</label>
+				<input id="delete-path" name="path" type="text" value="/explode/explode.html" placeholder="/some/file.html">
+				<button class="btn primary" type="submit">Run DELETE</button>
+			</form>
 
-        <div class="right">
+			<div class="request-card cgi-card">
+				<h3>Tester notes</h3>
+				<p>
+					Use this section for the general routes: static pages, redirects, error pages, and method checks.
+				</p>
+				<a class="btn secondary cgi-link" href="/errors/404_not_found.html">404 page</a>
+				<a class="btn secondary cgi-link" href="/errors/500_internal_server_error.html">500 page</a>
+			</div>
+		</div>
+	</section>
 
-            <div class="card">
+	<section class="tester-panel" id="cgi-tester">
+		<div class="panel-header">
+			<div>
+				<div class="tag tag-inline">cgi_tester</div>
+				<h2>CGI request checks</h2>
+			</div>
+			<p>
+				This mirrors the CGI tester flow: send GET and POST to <strong>/test.py</strong> and inspect the
+				environment that the Python script receives.
+			</p>
+		</div>
 
-                <div class="status">
-                    ● server online
-                </div>
+		<div class="tester-grid">
+			<form class="request-card" data-cgi-form data-method="GET">
+				<h3>CGI GET</h3>
+				<label for="cgi-query">Query string</label>
+				<input id="cgi-query" name="query" type="text" value="name=browser&mode=get" placeholder="name=value&mode=get">
+				<button class="btn primary" type="submit">Run CGI GET</button>
+			</form>
 
-                <img src="/errors/images/index.png" alt="Funny cat">
+			<form class="request-card" data-cgi-form data-method="POST">
+				<h3>CGI POST</h3>
+				<label for="cgi-post-body">Body</label>
+				<textarea id="cgi-post-body" name="body" rows="6" placeholder="send form data">name=browser&message=hello from the browser</textarea>
+				<button class="btn primary" type="submit">Run CGI POST</button>
+			</form>
 
-            </div>
+			<div class="request-card cgi-card">
+				<h3>CGI route</h3>
+				<p>
+					The browser tester uses the same endpoint as the server-side CGI tool.
+					Open the raw script or run a fetch to compare outputs.
+				</p>
+				<a class="btn secondary cgi-link" href="/test.py?source=browser" target="_blank" rel="noreferrer">Open /test.py</a>
+				<button class="btn secondary cgi-link" type="button" data-run-cgi>Fetch CGI output</button>
+			</div>
 
-        </div>
+			<div class="request-card cgi-card">
+				<h3>Route map</h3>
+				<p>
+					<strong>tester</strong>: static pages, redirects, and HTTP method behavior.
+					<br>
+					<strong>cgi_tester</strong>: CGI echo, query string, and request body handling.
+				</p>
+				<a class="btn secondary cgi-link" href="/redirect">redirect route</a>
+			</div>
+		</div>
+	</section>
 
-    </section>
+	<section class="response-shell" aria-live="polite">
+		<div class="response-topline">
+			<span class="response-title">live response</span>
+			<span class="response-badge" data-response-status>idle</span>
+		</div>
+		<pre class="response-output" data-response-output>Choose any request above and the response will appear here.</pre>
+	</section>
 
-    <div class="footer">
-        built with pain, sockets and caffeine ☕
-    </div>
+	<div class="footer">
+		built to match the current webserv design and the bundled tester flows.
+	</div>
+</main>
 
-</div>
+<script>
+(function () {
+	const outputEl = document.querySelector('[data-response-output]');
+	const statusEl = document.querySelector('[data-response-status]');
+
+	function previewText(text) {
+		if (!text)
+			return '[empty response]';
+		return text.length > 1800 ? `${text.slice(0, 1800)}\n\n… truncated …` : text;
+	}
+
+	async function runRequest(method, path, body) {
+		const options = {
+			method,
+			cache: 'no-store'
+		};
+
+		if (body !== undefined) {
+			options.headers = {
+				'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+			};
+			options.body = body;
+		}
+
+		const response = await fetch(path, options);
+		const text = await response.text();
+
+		statusEl.textContent = `${response.status}`;
+		outputEl.textContent = [
+			`HTTP ${response.status} ${response.statusText}`,
+			`URL: ${path}`,
+			`Method: ${method}`,
+			'',
+			previewText(text)
+		].join('\n');
+	}
+
+	function setError(message) {
+		statusEl.textContent = 'error';
+		outputEl.textContent = message;
+	}
+
+	document.querySelectorAll('[data-request-form]').forEach((form) => {
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+
+			const method = form.dataset.method;
+			const pathInput = form.querySelector('input[name="path"]');
+			const bodyInput = form.querySelector('textarea[name="body"]');
+			const path = pathInput ? pathInput.value.trim() : '/';
+			const body = bodyInput ? bodyInput.value : undefined;
+
+			statusEl.textContent = 'sending';
+
+			try {
+				await runRequest(method, path || '/', body);
+			} catch (error) {
+				setError(`${method} failed: ${error.message}`);
+			}
+		});
+	});
+
+	document.querySelectorAll('[data-cgi-form]').forEach((form) => {
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+
+			const method = form.dataset.method;
+			const queryInput = form.querySelector('input[name="query"]');
+			const bodyInput = form.querySelector('textarea[name="body"]');
+			const query = queryInput ? queryInput.value.trim() : '';
+			const body = bodyInput ? bodyInput.value : undefined;
+			const path = query ? `/test.py?${query}` : '/test.py';
+
+			statusEl.textContent = 'sending';
+
+			try {
+				if (method === 'GET')
+					await runRequest('GET', path);
+				else
+					await runRequest('POST', '/test.py', body || '');
+			} catch (error) {
+				setError(`CGI ${method} failed: ${error.message}`);
+			}
+		});
+	});
+
+	const runCgiButton = document.querySelector('[data-run-cgi]');
+	if (runCgiButton) {
+		runCgiButton.addEventListener('click', async () => {
+			statusEl.textContent = 'cgi';
+
+			try {
+				await runRequest('GET', '/test.py?source=browser');
+			} catch (error) {
+				setError(`CGI failed: ${error.message}`);
+			}
+		});
+	}
+})();
+</script>
 
 </body>
 </html>
