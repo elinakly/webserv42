@@ -5,6 +5,8 @@
 #include "HttpRequest.hpp"
 #include "CgiHandler.hpp"
 
+#include <cerrno>
+
 bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::string& filePath, size_t& idx)
 {
     Router router;
@@ -102,8 +104,38 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     // Получаем результат из роутера
     std::string statusCode = router.getStatusCode();
     std::string statusReason = router.getStatusReason(); // Если нужно для response.build
+
+    if (statusCode == "200" && req.getMethod() == "DELETE")
+    {
+        if (!filePath.empty() && unlink(filePath.c_str()) == 0)
+        {
+            statusCode = "204";
+            statusReason = "No Content";
+            filePath.clear();
+        }
+        else if (!filePath.empty())
+        {
+            if (errno == ENOENT)
+            {
+                statusCode = "404";
+                statusReason = "Not Found";
+            }
+            else if (errno == EACCES || errno == EPERM)
+            {
+                statusCode = "403";
+                statusReason = "Forbidden";
+            }
+            else
+            {
+                statusCode = "500";
+                statusReason = "Internal Server Error";
+            }
+            filePath = router.buildErrorResponsePath(config, statusCode);
+        }
+    }
+
     // If request failed, try to serve a configured error page for the status code.
-    if (statusCode != "200")
+    if (statusCode != "200" && statusCode != "204")
         filePath = router.buildErrorResponsePath(config, statusCode);
     // ОБРАБОТКА CGI ЗАПРОСОВ
     if (statusCode == "200" && !filePath.empty())
