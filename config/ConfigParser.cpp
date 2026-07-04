@@ -9,7 +9,7 @@ void ConfigParser::parse(const std::string& file_name)
 {
     std::ifstream file(file_name.c_str());
     if(!file)
-        throw std::runtime_error("Faild to open file");
+        throw std::runtime_error("Failed to open file");
     clear();
     tokenize(file);
     _pos = 0;
