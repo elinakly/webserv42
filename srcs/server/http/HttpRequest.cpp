@@ -32,8 +32,6 @@ bool HTTPRequest::parse()
 	if (!(stringReader >> _method >> _path >> _version)) // Reading "GET" "/" "HTTP(version)"
 		return(false);
 	//checking methods
-
-	std::cout << _method;
 	while (std::getline(lineReader, string)) // reading whole header
 	{
 		//if end of the header, than header is completed

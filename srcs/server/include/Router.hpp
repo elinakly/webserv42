@@ -28,6 +28,7 @@ public:
     // Теперь компилятор знает, что Server и LocationNode - это классы
     const LocationNode* findBestLocation(const Server &server, const std::string & requestPath);
     std::string getErrorPagePath(Server *config, const std::string &statusCode);
+	std::string getDefaultErrorPage(int code);
 	std::string buildErrorResponsePath(Server *config, const std::string &statusCode);
 	std::string routeRequest(const HTTPRequest& req, Server* config);
 };

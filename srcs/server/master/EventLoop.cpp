@@ -17,8 +17,6 @@ void ServerMaster::initPoll()
 
 void ServerMaster::cleanUp(int fd, size_t &idx)
 {
-    if (clients.find(fd) != clients.end())
-        std::cout << "Client disconnected: " << fd << std::endl;
     close(fd); 
     clients.erase(fd);
     fds.erase(fds.begin() + idx); // remove from pollfd struct
@@ -100,8 +98,6 @@ void ServerMaster::addClient(int newfd, int fd)
     clientPfd.revents = 0;
     fds.push_back(clientPfd);
     clients[newfd] = std::unique_ptr<Client>(new Client(newfd, fd));
-
-    std::cout << "Client connected: " << newfd << std::endl;
 }
 
 void ServerMaster::handleAccept(int fd)
