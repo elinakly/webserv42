@@ -33,8 +33,9 @@ class Client {
         // std::unique_ptr<HTTPResponse> _HTTPResponse;
     public:
         Client(int fd, int server_fd)
-            : _fd(fd), _server_fd(server_fd), _buffer(), _req(), _response(), _bytes_sent(0), _state(READING) {}
+            : _fd(fd), _server_fd(server_fd), _buffer(), _req(), _response(), _bytes_sent(0), _state(READING), _lastActivity(time(NULL)){}
         ~Client() = default;
+        time_t  _lastActivity;
         
         const std::string& getResponse() const { return _response; }
         const std::string& getBuffer() const {return _buffer; }

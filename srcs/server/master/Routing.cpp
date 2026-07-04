@@ -19,9 +19,8 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
 
-    // 1. ИСПРАВЛЕНО: Проверка разрешенных методов из конфигурации
     const LocationNode* location = findBestLocation(*config, requestPath);
-    const std::vector<std::string>* methodsToCheck = &config->methods; // По умолчанию используем глобальные методы сервера
+    const std::vector<std::string>* methodsToCheck = &config->methods;
 
     const std::string &root = location ? location->getRoot() : config->root_path;
     std::string index = location ? location->getIndexPath() : config->index;
@@ -29,11 +28,9 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (location) {
         const std::vector<std::string>& locationMethods = location->getAllowedMethods();
         if (!locationMethods.empty()) {
-            methodsToCheck = &locationMethods; // Если у location есть свои методы, используем их
+            methodsToCheck = &locationMethods;
         }
     }
-
-    // Проверяем, есть ли метод запроса в выбранном списке
     if (std::find(methodsToCheck->begin(), methodsToCheck->end(), req.getMethod()) == methodsToCheck->end()) 
     {
         _statusCode = "405";
@@ -77,14 +74,10 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _redirectPath = location->getNewPath();
         return "";
     }
-
-    // ... остальная часть функции ...
-    // 4. Построение пути
     if (_statusCode == "200")
     {
         filePath = buildFilePath(root, requestPath, index);
     }
-    // ...
 
     return filePath;
 }

@@ -90,7 +90,8 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     }
     Client &client = *it->second;
     client.appendData(buffer, bytes);
-
+    client._lastActivity = time(NULL);
+    
     if (!client.hasCompleteRequest())
         return;
     bool parseOk = client.processRequest();

@@ -62,31 +62,44 @@ void ServerMaster::dispatch(struct pollfd &pfd, size_t &idx)
         }
     }
 }
-
 void ServerMaster::pollLoop()
 {
     if (fds.empty())
         return;
 
-    int ready = poll(fds.data(), fds.size(), -1); // number of ready sockets 
+    int ready = poll(fds.data(), fds.size(), 1000);
     if (ready < 0)
     {
-        // if (errno == EINTR)
-        // {
-        //     _running = false;
-        //     return;
-        // }
         perror("poll");
         return;
     }
-
-    for (size_t idx = 0; idx < fds.size() && ready > 0; idx++) // checking only active sockets
+    for (size_t i = 0; i < fds.size(); i++)
     {
-        short re = fds[idx].revents; //set the type of event that is occured
-
-        if (re == 0) //if no activity we skip
+        auto it = clients.find(fds[i].fd);
+        if (it == clients.end())
             continue;
-        ready--; // dicrease the number of ready sockets
+
+        Client &client = *it->second;
+
+        if (client.getState() == Client::READING)
+        {
+            if (time(NULL) - client._lastActivity > 30)
+            {
+                std::cout << "HTTP TIMEOUT: " << fds[i].fd << std::endl;
+
+                cleanUp(fds[i].fd, i);
+                i--;
+            }
+        }
+    }
+    for (size_t idx = 0; idx < fds.size() && ready > 0; idx++)
+    {
+        short re = fds[idx].revents;
+
+        if (re == 0)
+            continue;
+
+        ready--;
         dispatch(fds[idx], idx);
     }
 }
