@@ -10,33 +10,35 @@
 bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::string& filePath, size_t& idx)
 {
     Router router;
-    HTTPRequest& req = client.getRequest(); // Достаем запрос из клиента
+    HTTPRequest& req = client.getRequest();
 
-    // Отделяем query string от пути для поиска location
     std::string requestPath = req.getPath();
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
+
     const LocationNode* location = router.findBestLocation(*config, requestPath);
     if (!location)
         return false;
+
     const std::map<std::string, std::string>& cgiMap = location->getCgi();
+
     std::string extension;
     size_t dotPos = filePath.rfind('.');
     if (dotPos != std::string::npos)
         extension = filePath.substr(dotPos);
-    // Если это не CGI файл, вернуть false чтобы обработать как статический файл
+
+    // Не CGI — продолжаем обычную обработку
     if (cgiMap.find(extension) == cgiMap.end())
         return false;
-    // Это CGI файл - обработаем его
+
     try
     {
         CgiHandler cgiHandler(req, *location);
-        std::string cgiOutput = cgiHandler.execute(); 
-        // Формируем ответ с выводом CGI скрипта
+        std::string cgiOutput = cgiHandler.execute();
+
         HTTPResponse response;
-        std::string statusLine = "200 OK"; // Для успешного скрипта статус всегда 200 OK
-        client.setResponse(response.buildCgiResponse(req, statusLine, cgiOutput));
+        client.setResponse(response.buildCgiResponse(req, "200 OK", cgiOutput));
         client.setState(Client::WRITING);
         fds[idx].events = POLLIN | POLLOUT;
         return true;
@@ -44,13 +46,24 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
     catch (const std::exception& e)
     {
         std::cerr << "CGI Runtime Error: " << e.what() << std::endl;
-        // Отправляем 500 ошибку при ошибке выполнения CGI
+
         HTTPResponse response;
-        std::string errorPath = router.buildErrorResponsePath(config, "500");
-        client.setResponse(response.build(req, errorPath, "500 Internal Server Error"));
+
+        std::string statusCode = "500";
+        std::string statusLine = "500 Internal Server Error";
+
+        if (std::string(e.what()) == "CGI timeout")
+        {
+            statusCode = "504";
+            statusLine = "504 Gateway Timeout";
+        }
+
+        std::string errorPath = router.buildErrorResponsePath(config, statusCode);
+
+        client.setResponse(response.build(req, errorPath, statusLine));
         client.setState(Client::WRITING);
         fds[idx].events = POLLIN | POLLOUT;
-        return true; // Возвращаем true, так как ошибку мы уже обработали и записали в клиента
+        return true;
     }
 }
 void ServerMaster::handleClient(int fd, size_t &idx)

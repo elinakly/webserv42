@@ -36,6 +36,7 @@ void	CgiHandler::setEnv()
 	_env["REQUEST_METHOD"] = _method;
 	_env["PATH_TRANSLATED"] = _path;
 	
+	
 	std::string query = "";
 	size_t	pos;
 	if ((pos = _request.getPath().find("?")) != std::string::npos)
@@ -43,6 +44,17 @@ void	CgiHandler::setEnv()
 	_env["QUERY_STRING"] = query;
 	_env["CONTENT_LENGTH"] = std::to_string(_body.size());
 	_env["CONTENT_TYPE"] = "";
+	std::string pathInfo = _request.getPath();
+
+	size_t queryPos = pathInfo.find('?');
+	if (queryPos != std::string::npos)
+		pathInfo = pathInfo.substr(0, queryPos);
+	_env["PATH_INFO"] = pathInfo;
+	_env["SCRIPT_NAME"] = pathInfo;
+	_env["SCRIPT_FILENAME"] = _path;
+	_env["REQUEST_URI"] = _request.getPath();
+	_env["SERVER_NAME"] = "localhost";
+	_env["SERVER_PORT"] = "8080";	
 }
 char **CgiHandler::converEnvToChar()
 {	
@@ -97,7 +109,23 @@ std::string CgiHandler::executeScript()
 			write(pipeIn[1], _body.c_str(), _body.size());
 		close(pipeIn[1]);
 		int	status;
-		waitpid(pid, &status, 0);
+		time_t	start = time(NULL);
+		while (true)
+		{
+			pid_t ret = waitpid(pid, &status, WNOHANG);
+			if (ret == pid)
+				break;
+			if (ret == -1)
+				throw(std::runtime_error("waitpid failed"));
+			if (time(NULL) - start >= 5)
+			{
+				kill(pid, SIGKILL);
+				waitpid(pid, &status, 0);
+				throw(std::runtime_error("CGI timeout"));
+			}
+			usleep(1000);
+		}
+			
 		std::string res;
 		char	buff[1024];
 		int	bytes;

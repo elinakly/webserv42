@@ -2,7 +2,7 @@
 import html
 import os
 import sys
-
+import time
 
 def escape(value):
 	return html.escape(value, quote=True)
@@ -25,6 +25,8 @@ query_string = os.environ.get('QUERY_STRING', '')
 content_length = os.environ.get('CONTENT_LENGTH', '0')
 content_type = os.environ.get('CONTENT_TYPE', 'unknown')
 body = read_body()
+while True:
+    time.sleep(5)
 response_body = (
 	'Method: {}\n'
 	'Query string: {}\n'
