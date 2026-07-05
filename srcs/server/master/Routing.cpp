@@ -13,7 +13,6 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     _redirectPath.clear();
     std::string filePath;
 
-    // Отделяем query string от пути для поиска файла
     std::string requestPath = req.getPath();
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
@@ -37,14 +36,12 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _statusReason = "Method Not Allowed";
     }
     
-    // 2. Проверка размера тела
     else if (req.getBody().size() > (size_t)config->max_body_size)
     {
         _statusCode = "413";
         _statusReason = "Payload Too Large";
     }
 
-    // 3. Редирект из location (return)
     else if (location && location->getIsRedir())
     {
         int code = location->getCode();
@@ -75,10 +72,7 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         return "";
     }
     if (_statusCode == "200")
-    {
         filePath = buildFilePath(root, requestPath, index);
-    }
-
     return filePath;
 }
 std::string Router::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index)
@@ -147,21 +141,33 @@ std::string Router::buildErrorResponsePath(Server *config, const std::string &st
     // 3. Return the resolved error file path for the response body.
     return filePath;
 }
-const LocationNode*	Router::findBestLocation(const Server &server, const std::string & requestPath) 
+const LocationNode* Router::findBestLocation(const Server &server,
+                                             const std::string &requestPath)
 {
-	const LocationNode	*bestLocation = nullptr;
-	size_t			len = 0;
+    const LocationNode *bestLocation = nullptr;
+    size_t len = 0;
 
-	for (const LocationNode* locationPtr : server.locations)
-	{
-		const	std::string &locPath = locationPtr->getPath();
-		//Checking for the prefix
-		if (requestPath.rfind(locPath, 0) == 0)
-			if (locPath.length() > len)
-			{
-				len = locPath.length();
-				bestLocation = locationPtr;
-			}
-	}
-	return bestLocation;
+    for (const LocationNode *locationPtr : server.locations)
+    {
+        const std::string &locPath = locationPtr->getPath();
+
+        if (requestPath.rfind(locPath, 0) == 0)
+        {
+            bool match = false;
+
+            if (requestPath.size() == locPath.size())
+                match = true;
+            else if (locPath.back() == '/')
+                match = true;
+            else if (requestPath[locPath.size()] == '/')
+                match = true;
+
+            if (match && locPath.length() > len)
+            {
+                len = locPath.length();
+                bestLocation = locationPtr;
+            }
+        }
+    }
+    return bestLocation;
 }
