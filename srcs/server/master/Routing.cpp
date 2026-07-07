@@ -13,15 +13,13 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     _redirectPath.clear();
     std::string filePath;
 
-    // Отделяем query string от пути для поиска файла
     std::string requestPath = req.getPath();
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
 
-    // 1. ИСПРАВЛЕНО: Проверка разрешенных методов из конфигурации
     const LocationNode* location = findBestLocation(*config, requestPath);
-    const std::vector<std::string>* methodsToCheck = &config->methods; // По умолчанию используем глобальные методы сервера
+    const std::vector<std::string>* methodsToCheck = &config->methods;
 
     const std::string &root = location ? location->getRoot() : config->root_path;
     std::string index = location ? location->getIndexPath() : config->index;
@@ -29,25 +27,21 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (location) {
         const std::vector<std::string>& locationMethods = location->getAllowedMethods();
         if (!locationMethods.empty()) {
-            methodsToCheck = &locationMethods; // Если у location есть свои методы, используем их
+            methodsToCheck = &locationMethods;
         }
     }
-
-    // Проверяем, есть ли метод запроса в выбранном списке
     if (std::find(methodsToCheck->begin(), methodsToCheck->end(), req.getMethod()) == methodsToCheck->end()) 
     {
         _statusCode = "405";
         _statusReason = "Method Not Allowed";
     }
     
-    // 2. Проверка размера тела
     else if (req.getBody().size() > (size_t)config->max_body_size)
     {
         _statusCode = "413";
         _statusReason = "Payload Too Large";
     }
 
-    // 3. Редирект из location (return)
     else if (location && location->getIsRedir())
     {
         int code = location->getCode();
@@ -77,15 +71,8 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _redirectPath = location->getNewPath();
         return "";
     }
-
-    // ... остальная часть функции ...
-    // 4. Построение пути
     if (_statusCode == "200")
-    {
         filePath = buildFilePath(root, requestPath, index);
-    }
-    // ...
-
     return filePath;
 }
 std::string Router::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index)
@@ -154,21 +141,33 @@ std::string Router::buildErrorResponsePath(Server *config, const std::string &st
     // 3. Return the resolved error file path for the response body.
     return filePath;
 }
-const LocationNode*	Router::findBestLocation(const Server &server, const std::string & requestPath) 
+const LocationNode* Router::findBestLocation(const Server &server,
+                                             const std::string &requestPath)
 {
-	const LocationNode	*bestLocation = nullptr;
-	size_t			len = 0;
+    const LocationNode *bestLocation = nullptr;
+    size_t len = 0;
 
-	for (const LocationNode* locationPtr : server.locations)
-	{
-		const	std::string &locPath = locationPtr->getPath();
-		//Checking for the prefix
-		if (requestPath.rfind(locPath, 0) == 0)
-			if (locPath.length() > len)
-			{
-				len = locPath.length();
-				bestLocation = locationPtr;
-			}
-	}
-	return bestLocation;
+    for (const LocationNode *locationPtr : server.locations)
+    {
+        const std::string &locPath = locationPtr->getPath();
+
+        if (requestPath.rfind(locPath, 0) == 0)
+        {
+            bool match = false;
+
+            if (requestPath.size() == locPath.size())
+                match = true;
+            else if (locPath.back() == '/')
+                match = true;
+            else if (requestPath[locPath.size()] == '/')
+                match = true;
+
+            if (match && locPath.length() > len)
+            {
+                len = locPath.length();
+                bestLocation = locationPtr;
+            }
+        }
+    }
+    return bestLocation;
 }
