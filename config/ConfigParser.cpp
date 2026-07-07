@@ -10,6 +10,10 @@ void ConfigParser::parse(const std::string& file_name)
     std::ifstream file(file_name.c_str());
     if(!file)
         throw std::runtime_error("Failed to open file");
+    
+    if (file.peek() == std::ifstream::traits_type::eof())
+        throw std::runtime_error("Empty config file");
+
     clear();
     tokenize(file);
     _pos = 0;
@@ -31,7 +35,7 @@ const std::vector<std::unique_ptr<ServerNode> >& ConfigParser::getServers() cons
 void ConfigParser::tokenize(std::ifstream& file)
 {
     char c;
-
+    
     while(file.get(c))
     {
         if (std::isspace(static_cast<unsigned char>(c)))

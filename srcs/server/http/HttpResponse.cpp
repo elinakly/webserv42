@@ -33,14 +33,20 @@ std::string HTTPResponse::readFile(const std::string& filePath)
 
 std::string HTTPResponse::buildHeaders()
 {
-    _contentType = getMimeTypes(_path);
+    if (_path.rfind("<html", 0) == 0)
+        _contentType = "text/html; charset=utf-8";
+    else
+        _contentType = getMimeTypes(_path);
     _connection = "Connection: close";
     return ("Content-Type: " + _contentType + "\r\n" + _connection + "\r\n");
 }
 
 void HTTPResponse::buildBody()
 {
-    _body = readFile(_path);
+    if (_path.rfind("<html", 0) == 0)
+        _body = _path;
+    else
+        _body = readFile(_path);
 
     if (_body.empty())
         _contentLength = "Content-Length: 0\r\n";

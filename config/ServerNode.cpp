@@ -51,6 +51,11 @@ void ServerNode::resolve()
         else if (CgiNode* cgi = dynamic_cast<CgiNode*>(node))
             _cgi = cgi->getCgi();
     }
+    validate();
+}
+
+void ServerNode::validate()
+{
     if (_port == 0)
         _port = 80;
     if (_root.empty())
@@ -65,4 +70,5 @@ void ServerNode::resolve()
     }
     if (_host.empty())
         _host = "127.0.0.1";
+
 }

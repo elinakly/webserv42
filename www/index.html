@@ -33,7 +33,7 @@
 		<div class="left">
 			<div class="buttons">
 				<a class="btn primary" href="#tester">open tester</a>
-				<a class="btn secondary" href="#cgi-tester">open cgi_tester</a>
+				<a class="btn primary" href="#cgi-tester">open cgi_tester</a>
 			</div>
 
 			<div class="stats-row">
@@ -59,9 +59,6 @@
 			<div class="card preview-card">
 				<div class="status">● server online</div>
 				<img src="/errors/images/index.png" alt="Decorative webserv artwork">
-				<div class="preview-caption">
-					The UI reuses the same artwork and palette as the current site so it feels native to the project.
-				</div>
 			</div>
 		</div>
 	</section>
@@ -83,7 +80,7 @@
 				<h3>GET</h3>
 				<label for="get-path">Path</label>
 				<input id="get-path" name="path" type="text" value="/" placeholder="/ or /explode/explode.html">
-				<button class="btn primary" type="submit">Run GET</button>
+				<button class="btn primary" type="submit" href="#response">Run GET</button>
 			</form>
 
 			<form class="request-card" data-request-form data-method="POST">
@@ -107,8 +104,8 @@
 				<p>
 					Use this section for the general routes: static pages, redirects, error pages, and method checks.
 				</p>
-				<a class="btn secondary cgi-link" href="/errors/404_not_found.html">404 page</a>
-				<a class="btn secondary cgi-link" href="/errors/500_internal_server_error.html">500 page</a>
+				<a class="btn primary cgi-link" href="/errors/404_not_found.html">404 page</a>
+				<a class="btn primary cgi-link" href="/errors/500_internal_server_error.html">500 page</a>
 			</div>
 		</div>
 	</section>
@@ -146,8 +143,8 @@
 					The browser tester uses the same endpoint as the server-side CGI tool.
 					Open the raw script or run a fetch to compare outputs.
 				</p>
-				<a class="btn secondary cgi-link" href="/test.py?source=browser" target="_blank" rel="noreferrer">Open /test.py</a>
-				<button class="btn secondary cgi-link" type="button" data-run-cgi>Fetch CGI output</button>
+				<a class="btn primary cgi-link" href="/test.py?source=browser" target="_blank" rel="noreferrer">Open /test.py</a>
+				<button class="btn primary cgi-link" type="button" data-run-cgi>Fetch CGI output</button>
 			</div>
 
 			<div class="request-card cgi-card">
@@ -157,12 +154,12 @@
 					<br>
 					<strong>cgi_tester</strong>: CGI echo, query string, and request body handling.
 				</p>
-				<a class="btn secondary cgi-link" href="/redirect">redirect route</a>
+				<a class="btn primary cgi-link" href="/redirect">redirect route</a>
 			</div>
 		</div>
 	</section>
 
-	<section class="response-shell" aria-live="polite">
+	<section class="response-shell" aria-live="polite" id="response">
 		<div class="response-topline">
 			<span class="response-title">live response</span>
 			<span class="response-badge" data-response-status>idle</span>
@@ -210,6 +207,10 @@
 			'',
 			previewText(text)
 		].join('\n');
+		document.getElementById('response').scrollIntoView({
+			behavior: 'smooth',
+			block: 'start'
+		});
 	}
 
 	function setError(message) {

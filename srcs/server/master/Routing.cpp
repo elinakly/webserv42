@@ -5,7 +5,6 @@
 
 #include <algorithm>
 
-
 std::string Router::routeRequest(const HTTPRequest& req, Server* config)
 {
     _statusCode = "200";
@@ -21,10 +20,11 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     const LocationNode* location = findBestLocation(*config, requestPath);
     const std::vector<std::string>* methodsToCheck = &config->methods;
 
-    const std::string &root = location ? location->getRoot() : config->root_path;
+    const std::string& root = location ? location->getRoot() : config->root_path;
     std::string index = location ? location->getIndexPath() : config->index;
 
-    if (location) {
+    if (location)
+    {
         const std::vector<std::string>& locationMethods = location->getAllowedMethods();
         if (!locationMethods.empty()) {
             methodsToCheck = &locationMethods;
@@ -41,32 +41,31 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _statusCode = "413";
         _statusReason = "Payload Too Large";
     }
-
     else if (location && location->getIsRedir())
     {
         int code = location->getCode();
         switch (code)
         {
-            case (301):
+            case 301:
                 _statusCode = "301";
                 _statusReason = "Moved Permanently";
-            break ;
-            case (302):
+                break;
+            case 302:
                 _statusCode = "302";
                 _statusReason = "Found";
-                break ;
-            case (307):
+                break;
+            case 307:
                 _statusCode = "307";
                 _statusReason = "Temporary Redirected";
-                break ;
-            case (308):
-            _statusCode = "308";
-            _statusReason = "Moved Permanetly";
-            break ;
+                break;
+            case 308:
+                _statusCode = "308";
+                _statusReason = "Moved Permanently";
+                break;
             default:
                 _statusCode = "302";
                 _statusReason = "Found";
-            break ;
+                break;
         }
         _redirectPath = location->getNewPath();
         return "";
@@ -115,31 +114,52 @@ if (!(pathStats.st_mode & S_IROTH))
     // Если все проверки пройдены, статус остается "200"
     return filePath;
 }
+
+
 std::string Router::getErrorPagePath(Server *config, const std::string &statusCode)
 {
     int code = std::stoi(statusCode);
-    std::map<int, std::string>::const_iterator it = config->errors.find(code); // converting string into numbers
+    std::map<int, std::string>::const_iterator it = config->errors.find(code);
     if (it != config->errors.end())
     // custom page was found returning path  "errors/404_not_found"
-        return (it->second);
-    else
+        return it->second;
     // if there's not than returing the main page
-        return ("");
+    return "";
 }
+
+std::string Router::getDefaultErrorPage(int code)
+{
+    switch (code)
+    {
+        case 400: return "<html><body><h1>400 Bad Request</h1></body></html>";
+        case 403: return "<html><body><h1>403 Forbidden</h1></body></html>";
+        case 404: return "<html><body><h1>404 Not Found</h1></body></html>";
+        case 405: return "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+        case 408: return "<html><body><h1>408 Request Timeout</h1></body></html>";
+        case 413: return "<html><body><h1>413 Payload Too Large</h1></body></html>";
+        case 500: return "<html><body><h1>500 Internal Server Error</h1></body></html>";
+        case 502: return "<html><body><h1>502 Bad Gateway</h1></body></html>";
+        case 504: return "<html><body><h1>504 Gateway Timeout</h1></body></html>";
+        default: return "<html><body><h1>500 Internal Server Error</h1></body></html>";
+    }
+}
+
 std::string Router::buildErrorResponsePath(Server *config, const std::string &statusCode)
 {
-    // 1. Try to find a configured error_page for the status code.
+        // 1. Try to find a configured error_page for the status code.
+    int code = std::stoi(statusCode);
+
     std::string errorPath = getErrorPagePath(config, statusCode);
-    if (errorPath.empty())
-        return "";
+    if (!errorPath.empty())
+    {
+        // 2. Build absolute path using server root and index fallback.
+        std::string filePath = buildFilePath(config->root_path, errorPath, config->index);
+        if (!filePath.empty())
+        // 3. Return the resolved error file path for the response body.
+            return filePath;
+    }
 
-    // 2. Build absolute path using server root and index fallback.
-    std::string filePath = buildFilePath(config->root_path, errorPath, config->index);
-    if (filePath.empty())
-        return "";
-
-    // 3. Return the resolved error file path for the response body.
-    return filePath;
+    return getDefaultErrorPage(code);
 }
 const LocationNode* Router::findBestLocation(const Server &server,
                                              const std::string &requestPath)

@@ -3,10 +3,12 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <fstream>
 #include <map>
 
 #include "ASTNode.hpp"
 #include "CgiNode.hpp"
+
 
 class LocationNode;
 class DirectiveNode;
@@ -50,4 +52,5 @@ class ServerNode : public ASTNode {
         void addLocation(std::unique_ptr<ASTNode> location) noexcept;
 
         void resolve();
+        void validate();
 };

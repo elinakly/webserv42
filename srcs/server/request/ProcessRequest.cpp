@@ -74,9 +74,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 
     if (bytes <= 0)
     {
-        if (bytes == 0)
-            std::cout << "Client disconnected: " << fd << std::endl;
-        else
+        if (bytes < 0)
             perror("recv");
 
         cleanUp(fd, idx);
