@@ -21,13 +21,18 @@ bool Client::hasCompleteRequest() const
     //else if content length appeard, than its an post request
     if (pos == std::string::npos)
         return(true);
-    //searching for the end of the header
-    size_t end = headers.find("\r\n", pos);
+vu    //searching for the end of the header in the raw buffer, so the final header line is handled too
+    size_t end = _buffer.find("\r\n", pos);
     //if header is broken then we're protecting it
     if (end == std::string::npos)
         return (false);
     //Cutting the content legth
-    std::string len = headers.substr(pos + 15, end -(pos + 15));
+    std::string len = _buffer.substr(pos + 15, end -(pos + 15));
+    size_t first = len.find_first_not_of(" \t");
+    size_t last = len.find_last_not_of(" \t");
+    if (first == std::string::npos)
+        return (false);
+    len = len.substr(first, last - first + 1);
     int contentLegth = atoi(len.c_str());
     //searchin the start of the body
     size_t bodyStart = headerEnd + 4;
