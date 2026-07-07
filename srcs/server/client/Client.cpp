@@ -21,7 +21,7 @@ bool Client::hasCompleteRequest() const
     //else if content length appeard, than its an post request
     if (pos == std::string::npos)
         return(true);
-vu    //searching for the end of the header in the raw buffer, so the final header line is handled too
+   //searching for the end of the header in the raw buffer, so the final header line is handled too
     size_t end = _buffer.find("\r\n", pos);
     //if header is broken then we're protecting it
     if (end == std::string::npos)
