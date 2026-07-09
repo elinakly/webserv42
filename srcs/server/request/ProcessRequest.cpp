@@ -147,7 +147,8 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     }
 
     // If request failed, try to serve a configured error page for the status code.
-    if (statusCode != "200" && statusCode != "204")
+    // Redirects are handled separately and must not be converted into error pages.
+    if (statusCode[0] != '2' && statusCode[0] != '3')
         filePath = router.buildErrorResponsePath(config, statusCode);
     // ОБРАБОТКА CGI ЗАПРОСОВ
     if (statusCode == "200" && !filePath.empty())
