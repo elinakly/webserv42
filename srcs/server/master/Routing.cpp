@@ -161,8 +161,7 @@ std::string Router::buildErrorResponsePath(Server *config, const std::string &st
 
     return getDefaultErrorPage(code);
 }
-const LocationNode* Router::findBestLocation(const Server &server,
-                                             const std::string &requestPath)
+const LocationNode* Router::findBestLocation(const Server &server, const std::string &requestPath)
 {
     const LocationNode *bestLocation = nullptr;
     size_t len = 0;
@@ -170,6 +169,9 @@ const LocationNode* Router::findBestLocation(const Server &server,
     for (const LocationNode *locationPtr : server.locations)
     {
         const std::string &locPath = locationPtr->getPath();
+
+        if (locPath == "/redirect" && requestPath != "/redirect")
+            continue;
 
         if (requestPath.rfind(locPath, 0) == 0)
         {
