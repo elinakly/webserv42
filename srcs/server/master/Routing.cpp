@@ -22,6 +22,18 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
 
     const std::string& root = location ? location->getRoot() : config->root_path;
     std::string index = location ? location->getIndexPath() : config->index;
+    std::string relativePath = requestPath;
+
+    if (location)
+    {
+        const std::string &locpath = location->getPath();
+        if (relativePath.find(locpath) == 0)
+        {
+            relativePath.erase(0, locpath.length());
+            if (relativePath.empty())
+                relativePath = "/";
+        }
+    }
 
     if (location)
     {
@@ -71,7 +83,12 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         return "";
     }
     if (_statusCode == "200")
-        filePath = buildFilePath(root, requestPath, index);
+    {
+        if (req.getMethod() == "POST")
+            filePath = root + relativePath;
+        else
+            filePath = buildFilePath(root, relativePath, index);
+    }
     return filePath;
 }
 std::string Router::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index)

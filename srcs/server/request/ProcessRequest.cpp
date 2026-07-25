@@ -113,10 +113,43 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         return;
     }
     std::string filePath = router.routeRequest(req, config);
-    // Получаем результат из роутера
+    
     std::string statusCode = router.getStatusCode();
-    std::string statusReason = router.getStatusReason(); // Если нужно для response.build
+    std::string statusReason = router.getStatusReason();
+    if (statusCode == "200" && !filePath.empty())
+    {
+        if (handleCgiRequest(config, client, filePath, idx))
+            return;
+    }
+    if (statusCode == "200" &&
+    req.getMethod() == "POST")
+{
+    struct stat st;
+    if (stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+    {
+        if (filePath.back() != '/')
+            filePath += '/';
 
+        filePath += "upload.bin";
+    }
+
+    std::ofstream out(filePath.c_str(), std::ios::binary);
+
+    if (!out)
+    {
+        statusCode = "500";
+        statusReason = "Internal Server Error";
+        filePath = router.buildErrorResponsePath(config, statusCode);
+    }
+    else
+    {
+        out.write(req.getBody().c_str(), req.getBody().size());
+        out.close();
+
+        statusCode = "201";
+        statusReason = "Created";
+    }
+}
     if (statusCode == "200" && req.getMethod() == "DELETE")
     {
         if (!filePath.empty() && unlink(filePath.c_str()) == 0)
@@ -150,11 +183,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     // Redirects are handled separately and must not be converted into error pages.
     if (statusCode[0] != '2' && statusCode[0] != '3')
         filePath = router.buildErrorResponsePath(config, statusCode);
-    // ОБРАБОТКА CGI ЗАПРОСОВ
-    if (statusCode == "200" && !filePath.empty())
-        if (handleCgiRequest(config, client, filePath, idx))
-            return;
-    // ФОРМИРОВАНИЕ ОТВЕТА
     HTTPResponse response;
     std::string extraHeaders;
     if (statusCode == "302" && !router.getRedirectPath().empty())
@@ -166,6 +194,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }
+
 
 bool Client::processRequest()
 {
