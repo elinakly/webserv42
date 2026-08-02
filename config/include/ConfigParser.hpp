@@ -69,6 +69,7 @@ class ConfigParser {
         std::unique_ptr<ASTNode> parseAllowedMethods();
         std::unique_ptr<ASTNode> parseReturn();
         std::unique_ptr<ASTNode> parseCgi();
+        std::unique_ptr<ASTNode> parseAutoIndex();
 
         void clear() noexcept;
 };

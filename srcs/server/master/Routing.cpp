@@ -2,6 +2,8 @@
 #include "RootNode.hpp"
 #include "IndexNode.hpp"
 #include "Router.hpp"
+#include <dirent.h>
+#include <sstream>
 
 #include <algorithm>
 
@@ -13,6 +15,9 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     std::string filePath;
 
     std::string requestPath = req.getPath();
+    
+    if (!requestPath.empty() && requestPath[0] != '/')
+        requestPath = "/" + requestPath;
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
@@ -27,9 +32,11 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (location)
     {
         const std::string &locpath = location->getPath();
-        if (relativePath.find(locpath) == 0)
+
+        if (locpath != "/" && relativePath.find(locpath) == 0)
         {
             relativePath.erase(0, locpath.length());
+
             if (relativePath.empty())
                 relativePath = "/";
         }
@@ -87,15 +94,17 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         if (req.getMethod() == "POST")
             filePath = root + relativePath;
         else
-            filePath = buildFilePath(root, relativePath, index);
+            filePath = buildFilePath(root, relativePath, index, location);
     }
     return filePath;
 }
-std::string Router::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index)
+std::string Router::buildFilePath(const std::string &root, const std::string &requestPath, std::string &index, const LocationNode *location)
 {
     std::string filePath = root + requestPath;
     struct stat pathStats;
-    
+    std::cout << "ROOT: " << root << std::endl;
+    std::cout << "REQUEST: " << requestPath << std::endl;
+    std::cout << "FILEPATH: " << filePath << std::endl;
 
     // 1. Проверяем, существует ли путь
     if (stat(filePath.c_str(), &pathStats) != 0)
@@ -108,28 +117,30 @@ std::string Router::buildFilePath(const std::string &root, const std::string &re
     // 2. Если это директория, строим путь к index-файлу
     if (S_ISDIR(pathStats.st_mode))
     {
+        std::string dirPath = filePath;
         if (filePath.back() != '/')
             filePath += '/';
         filePath += index;
         // И снова проверяем, теперь уже для index-файла
         if (stat(filePath.c_str(), &pathStats) != 0)
         {
+            if (location && location->getAutoIndex())
+            {
+                return(dirPath);
+            }
             _statusCode = "404"; // index-файл не найден
             _statusReason = "Not Found";
             return "";
         }
     }
-
-    // 3. Проверяем права на чтение для ЛЮБОГО конечного файла
-if (!(pathStats.st_mode & S_IROTH)) 
-{
-    _statusCode = "403"; // Доступ запрещен
-    _statusReason = "Forbiden";
-    return "";
-}
-    
-    // Если все проверки пройдены, статус остается "200"
-    return filePath;
+    if (!(pathStats.st_mode & S_IROTH)) 
+    {
+        _statusCode = "403"; // Доступ запрещен
+        _statusReason = "Forbiden";
+        return "";
+    }
+        
+        return filePath;
 }
 
 
@@ -170,7 +181,7 @@ std::string Router::buildErrorResponsePath(Server *config, const std::string &st
     if (!errorPath.empty())
     {
         // 2. Build absolute path using server root and index fallback.
-        std::string filePath = buildFilePath(config->root_path, errorPath, config->index);
+        std::string filePath = buildFilePath(config->root_path, errorPath, config->index, NULL);
         if (!filePath.empty())
         // 3. Return the resolved error file path for the response body.
             return filePath;
@@ -209,4 +220,33 @@ const LocationNode* Router::findBestLocation(const Server &server, const std::st
         }
     }
     return bestLocation;
+}
+std::string Router::generateDirectoryListing(const std::string &path, const std::string &url)
+{
+    DIR *dir = opendir(path.c_str());
+
+    if (!dir)
+        return("");
+    std::stringstream html;
+
+    html << "<html><body>";
+    html << "<h1>Index of " << url << "</h1>";
+    html << "<ul>";
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        std::string name = entry->d_name;
+        html << "<li><a href=\"";
+        if (url.back() != '/')
+            html << url << "/";
+        else
+            html << url;
+        html << name << "\">";
+        html << name;
+        html << "</a></li>";
+    }
+    html << "</ul><body></html>";
+    closedir(dir);
+    return(html.str());
 }

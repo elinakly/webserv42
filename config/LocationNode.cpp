@@ -1,5 +1,6 @@
 #include "LocationNode.hpp"
-
+#include "AutoIndexNode.hpp"
+#include "iostream"
 const std::string& LocationNode::getPath() const
 { 
     return _path; 
@@ -17,6 +18,16 @@ bool LocationNode::getIsRedir() const
 int LocationNode::getCode() const
 {
     return _code;
+}
+
+bool LocationNode::getAutoIndex() const
+{
+    return(_autoIndex);
+}
+
+void LocationNode::setAutoIndex(bool value)
+{
+    _autoIndex = value;
 }
 
 void LocationNode::resolve(const ServerNode &serverNode)
@@ -40,6 +51,10 @@ void LocationNode::resolve(const ServerNode &serverNode)
         {
             if (cgi)
                 _cgi = cgi->getCgi();
+        }
+        else if (AutoIndexNode *autoIndex = dynamic_cast<AutoIndexNode*>(node))
+        {
+            _autoIndex = autoIndex->getEnabled();
         }
     }
 }

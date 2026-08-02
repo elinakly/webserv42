@@ -17,6 +17,7 @@ class LocationNode : public ASTNode {
         bool _isRedir;
         std::string _newPath;
         int _code;
+        bool _autoIndex;
 
         std::vector<std::unique_ptr<ASTNode> > _directives;
 
@@ -26,13 +27,15 @@ class LocationNode : public ASTNode {
         CgiNode::cgi_map_type _cgi;
 
     public:
-        LocationNode(std::string path): _path(path) , _isRedir(false), _cgi() {}
+        LocationNode(std::string path): _path(path) , _isRedir(false), _autoIndex(false), _cgi(){}
         ~LocationNode() = default;
 
         const std::string& getPath() const;
         const std::string& getNewPath() const;
         int getCode() const;
         bool getIsRedir() const;
+        bool getAutoIndex() const;
+        void setAutoIndex(bool value);
         const std::string& getRoot() const;
         const std::string& getIndexPath() const;
         const std::vector<std::string>& getMethods() const;

@@ -1,4 +1,5 @@
 #include "ConfigParser.hpp"
+#include "AutoIndexNode.hpp"
 
 std::unique_ptr<ServerNode> ConfigParser::parseServer()
 {
@@ -60,6 +61,8 @@ std::unique_ptr<ASTNode> ConfigParser::parseDirective()
         return parseReturn();
     else if (word == "cgi")
         return parseCgi();
+    else if (word == "autoindex")
+        return(parseAutoIndex());
     throw std::runtime_error("Invalid directive in block");
 }
 
@@ -189,4 +192,13 @@ std::unique_ptr<ASTNode> ConfigParser::parseHost()
 
     expect(SEMICOLON);
     return(std::make_unique<HostNode>(host));
+}
+std::unique_ptr<ASTNode> ConfigParser::parseAutoIndex()
+{
+    std::string value = expectWord();
+    
+    if (value != "on" && value != "off")
+        throw std::runtime_error("autoindex: expected on or off");
+    expect(SEMICOLON);
+    return(std::make_unique<AutoIndexNode>(value == "on"));
 }

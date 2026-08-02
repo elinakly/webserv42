@@ -22,6 +22,7 @@ SRCS = 	srcs/main.cpp \
 		srcs/server/http/HttpResponse.cpp \
 		srcs/server/response/SendResponse.cpp \
 		srcs/server/client/Client.cpp \
+		config/AutoIndexNode.cpp \
 
 OBJS_DIR    = obj
 OBJS        = $(SRCS:%.cpp=$(OBJS_DIR)/%.o)

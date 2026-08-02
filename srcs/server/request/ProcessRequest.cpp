@@ -183,14 +183,51 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     // Redirects are handled separately and must not be converted into error pages.
     if (statusCode[0] != '2' && statusCode[0] != '3')
         filePath = router.buildErrorResponsePath(config, statusCode);
+    bool isDir = false;
+    std::string dirBody;
+
+    struct stat st;
+    if (statusCode == "200" && !filePath.empty() && stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+    {
+        const LocationNode *location = router.findBestLocation(*config, req.getPath());
+        if (location && location->getAutoIndex())
+        {
+            dirBody = router.generateDirectoryListing(filePath, req.getPath());
+            isDir = true;
+        }
+    }
     HTTPResponse response;
     std::string extraHeaders;
+
     if (statusCode == "302" && !router.getRedirectPath().empty())
         extraHeaders = "Location: " + router.getRedirectPath() + "\r\n";
+
     std::string statusLine = statusCode;
     if (!statusReason.empty())
         statusLine += " " + statusReason;
-    client.setResponse(response.build(req, filePath, statusLine, extraHeaders));
+
+
+    if (isDir)
+    {
+        std::string rawResponse;
+
+        rawResponse += "HTTP/1.1 200 OK\r\n";
+        rawResponse += "Content-Type: text/html\r\n";
+        rawResponse += "Content-Length: ";
+        rawResponse += std::to_string(dirBody.size());
+        rawResponse += "\r\n";
+        rawResponse += "Connection: close\r\n";
+        rawResponse += "\r\n";
+        rawResponse += dirBody;
+
+        client.setResponse(rawResponse);
+    }
+    else
+    {
+        client.setResponse(
+            response.build(req, filePath, statusLine, extraHeaders)
+        );
+    }
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }
