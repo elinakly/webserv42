@@ -67,7 +67,6 @@ class ServerMaster
         void handleClient(int fd, size_t &idx);
         void sendResponse(int fd);
         void cleanUp(int fd, size_t &idx);
-        // void shutdownServer();
         bool        isMethodAllowed(const std::string &method, const LocationNode *location, Server *config);
         std::vector<std::string> getLocationMethods(const LocationNode *location);
         bool handleCgiRequest(Server* config, Client& client, const std::string& filePath, size_t& idx);

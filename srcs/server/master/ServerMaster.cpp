@@ -4,10 +4,16 @@
 
 volatile sig_atomic_t ServerMaster::_running = true;
 
-
 ServerMaster::~ServerMaster()
 {
-    
+    for (std::map<int, Server*>::iterator it = listenSockets.begin();
+        it != listenSockets.end();
+        ++it)
+    {
+        close(it->first);
+    }
+
+    listenSockets.clear();
 }
 
 void ServerMaster::handler(int signal)
