@@ -92,9 +92,24 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (_statusCode == "200")
     {
         if (req.getMethod() == "POST")
-            filePath = root + relativePath;
+        {
+            std::string upload = requestPath;
+            if (location)
+            {
+                const std::string &locPath = location->getPath();
+                if (locPath != "/" && upload.find(locPath) == 0)
+                {
+                    upload.erase(0, locPath.length());
+                    if (upload.empty())
+                        upload = "/";
+                }
+            }
+            filePath = root + upload;
+        }
         else
-            filePath = buildFilePath(root, relativePath, index, location);
+        {
+            filePath = buildFilePath(root, requestPath, index, location);
+        }
     }
     return filePath;
 }
@@ -102,26 +117,20 @@ std::string Router::buildFilePath(const std::string &root, const std::string &re
 {
     std::string filePath = root + requestPath;
     struct stat pathStats;
-    std::cout << "ROOT: " << root << std::endl;
-    std::cout << "REQUEST: " << requestPath << std::endl;
-    std::cout << "FILEPATH: " << filePath << std::endl;
 
-    // 1. Проверяем, существует ли путь
     if (stat(filePath.c_str(), &pathStats) != 0)
     {
         _statusCode = "404";
         _statusReason= "Not Found";
-        return ""; // ИСПРАВЛЕНО: Возвращаем пустую строку при ошибке
+        return "";
     }
 
-    // 2. Если это директория, строим путь к index-файлу
     if (S_ISDIR(pathStats.st_mode))
     {
         std::string dirPath = filePath;
         if (filePath.back() != '/')
             filePath += '/';
         filePath += index;
-        // И снова проверяем, теперь уже для index-файла
         if (stat(filePath.c_str(), &pathStats) != 0)
         {
             if (location && location->getAutoIndex())
