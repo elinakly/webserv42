@@ -1,6 +1,63 @@
 #include "CgiHandler.hpp"
 
-CgiHandler::CgiHandler(const HTTPRequest &request, const LocationNode &location) : _request(request)
+pid_t CgiHandler::start()
+{
+	int	PipeIn[2];
+	int	PipeOut[2];
+
+	if (pipe(PipeIn) < 0 || pipe(PipeOut) < 0)
+		throw std::runtime_error("Pipe Failed");
+	_pipeIn = PipeIn[1];
+	_pipeOut = PipeOut[0];
+	_pid = fork();
+
+	if (_pid < 0)
+	{
+		close(PipeIn[0]);
+		close(PipeIn[1]);
+		close(PipeOut[0]);
+		close(PipeOut[1]);
+		throw std::runtime_error("Fork Failed");
+	}
+	if (_pid == 0)
+	{
+		close(PipeIn[1]);
+		close(PipeOut[0]);
+		dup2(PipeIn[0], STDIN_FILENO);
+		dup2(PipeOut[1], STDOUT_FILENO);
+		close(PipeIn[0]);
+		close(PipeOut[1]);
+
+		char *args[3];
+		args[0] = const_cast<char*>(_inter.c_str());
+		args[1] = const_cast<char*>(_path.c_str());
+		args[2] = NULL;
+		execve(args[0], args, converEnvToChar());
+		exit(1);
+	}
+	close(PipeIn[0]);
+	close(PipeOut[1]);
+	fcntl(_pipeOut, F_SETFL, O_NONBLOCK);
+	return(_pid);
+}
+void	CgiHandler::writeBody()
+{
+	if (!_body.empty())
+		write(_pipeIn, _body.c_str(), _body.size());
+	close(_pipeIn);
+	_pipeIn = -1;
+}
+int	CgiHandler::getPipeFd() const
+{
+	return (_pipeOut);
+}
+
+pid_t CgiHandler::getPid() const
+{
+	return (_pid);
+}
+
+CgiHandler::CgiHandler(const HTTPRequest &request, const LocationNode &location) : _request(request), _pid(-1), _pipeOut(-1), _pipeIn(-1)
 {
 	this->_body = request.getBody();
 	this->_uri = request.getUri();
@@ -27,6 +84,13 @@ CgiHandler::CgiHandler(const HTTPRequest &request, const LocationNode &location)
 		throw std::runtime_error("Unsuported CGI Extension");
 	_inter = it->second;
 	this->setEnv();
+}
+CgiHandler::~CgiHandler()
+{
+	if (_pipeIn != -1)
+		close(_pipeIn);
+	if (_pipeOut != -1)
+		close(_pipeOut);
 }
 void	CgiHandler::setEnv()
 {

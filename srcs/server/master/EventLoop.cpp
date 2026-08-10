@@ -29,6 +29,12 @@ void ServerMaster::cleanUp(int fd, size_t &idx)
 void ServerMaster::dispatch(struct pollfd &pfd, size_t &idx)
 {
     int fd = pfd.fd; //get fd
+    if (_cgiProcesses.find(fd) != _cgiProcesses.end())
+    {
+        if (pfd.revents & (POLLIN | POLLHUP | POLLERR))
+            handleCgiOutput(fd);
+        return ;
+    }
     if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) // if error | disconected | wrong fd
     {
         if (!listenSockets.count(fd)) //if its not server socket (but client)
@@ -64,8 +70,8 @@ void ServerMaster::pollLoop()
 {
     if (fds.empty())
         return;
-
     int ready = poll(fds.data(), fds.size(), 1000);
+
     if (ready < 0)
     {
         perror("poll");
@@ -90,13 +96,53 @@ void ServerMaster::pollLoop()
             }
         }
     }
+    for (std::map<int, CgiProcess>::iterator it = _cgiProcesses.begin(); it != _cgiProcesses.end();)
+    {
+        CgiProcess &process = it->second;
+        if (time(NULL) - process.startTime >= 5)
+        {
+            kill(process.pid, SIGKILL);
+            waitpid(process.pid, NULL, 0);
+            close(process.pipeFd);
+            for (size_t i = 0; i < fds.size(); i++)
+            {
+                if (fds[i].fd == process.pipeFd)
+                {
+                    fds.erase(fds.begin() + i);
+                    break ;
+                }
+            }
+            std::map<int, std::unique_ptr<Client>>::iterator clientIt;
+            clientIt = clients.find(process.clientFd);
+            if (clientIt != clients.end())
+            {
+                Client &client = *clientIt->second;
+                HTTPRequest &req = client.getRequest();
+                Router router;
+                HTTPResponse response;
+                Server *config = listenSockets[client.getServerFd()];
+                std::string errorPath = router.buildErrorResponsePath(config, "504");
+                client.setResponse(response.build(req, errorPath, "504 Gateway Timeout"));
+                client.setState(Client::WRITING);
+                for (size_t i = 0; i < fds.size(); i++)
+                {
+                    if (fds[i].fd == process.clientFd)
+                    {
+                        fds[i].events = POLLIN | POLLOUT;
+                        break ;
+                    }
+                }
+            }
+            it = _cgiProcesses.erase(it);
+        }
+        else
+            ++it;
+    }
     for (size_t idx = 0; idx < fds.size() && ready > 0; idx++)
     {
         short re = fds[idx].revents;
-
         if (re == 0)
             continue;
-
         ready--;
         dispatch(fds[idx], idx);
     }
@@ -117,11 +163,13 @@ void ServerMaster::handleAccept(int fd)
 {
     while (true)
     {
-        int newfd = accept(fd, NULL, NULL); //add  client to the waitlist
+        int newfd = accept(fd, NULL, NULL);
+
         if (newfd < 0)
-        {  //no more clients
+        {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
+
             perror("accept");
             break;
         }
@@ -130,6 +178,7 @@ void ServerMaster::handleAccept(int fd)
         {
             close(newfd);
             perror("fcntl");
+            continue;
         }
         addClient(newfd, fd);
     }

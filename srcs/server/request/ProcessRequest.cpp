@@ -34,14 +34,27 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
 
     try
     {
-        CgiHandler cgiHandler(req, *location);
-        std::string cgiOutput = cgiHandler.execute();
-
-        HTTPResponse response;
-        client.setResponse(response.buildCgiResponse(req, "200 OK", cgiOutput));
-        client.setState(Client::WRITING);
-        fds[idx].events = POLLIN | POLLOUT;
-        return true;
+        std::unique_ptr<CgiHandler> cgiHandler(new CgiHandler(req, *location));
+        pid_t pid = cgiHandler->start();
+        cgiHandler->writeBody();
+        int pipeFd = cgiHandler->getPipeFd();
+        fcntl(pipeFd, F_SETFL, O_NONBLOCK);
+        CgiProcess process;
+        process.pid = pid;
+        process.pipeFd = pipeFd;
+        process.clientFd = fds[idx].fd;
+        process.clientIdx = idx;
+        process.startTime = time(NULL);
+        process.output = "";
+        process.handler = std::move(cgiHandler);
+        _cgiProcesses[pipeFd] = std::move(process);
+        pollfd cgiPoll;
+        cgiPoll.fd = pipeFd;
+        cgiPoll.events = POLLIN;
+        cgiPoll.revents = 0;
+        fds.push_back(cgiPoll);
+        fds[idx].events = 0;
+        return (true);
     }
     catch (const std::exception& e)
     {
@@ -232,11 +245,66 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     fds[idx].events = POLLIN | POLLOUT;
 }
 
-
 bool Client::processRequest()
 {
     _req = HTTPRequest(_buffer);    
     bool ok = _req.parse(); // make parser
     resetBytesSent();
     return ok;
+}
+void    ServerMaster::handleCgiOutput(int pipeFd)
+{
+    std::map<int, CgiProcess>::iterator it = _cgiProcesses.find(pipeFd);
+    if (it == _cgiProcesses.end())
+        return ;
+    CgiProcess &process = it->second;
+    char buff[4096];
+    
+    while (true)
+    {
+        ssize_t bytes = read(pipeFd, buff, sizeof(buff));
+        if (bytes > 0)
+        {
+            process.output.append(buff, bytes);
+            continue;
+        }
+        if (bytes == 0)
+            break;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return;
+        std::cerr << "CGI pipe read error" << std::endl;
+        break;
+    }
+    int status;
+    pid_t res = waitpid(process.pid, &status, WNOHANG);
+    if (res == 0)
+        return;
+    if (res == -1)
+    {
+        std::cerr << "waitpid failed" << std::endl;
+        return;
+    }
+    std::map<int, std::unique_ptr<Client>>::iterator clientIt;
+    clientIt = clients.find(process.clientFd);
+    if (clientIt == clients.end())
+    {
+        close(pipeFd);
+        _cgiProcesses.erase(it);
+        return;
+    }
+    Client &client = *clientIt->second;
+    HTTPRequest &req = client.getRequest();
+    HTTPResponse response;
+    client.setResponse(response.buildCgiResponse(req, "200 OK", process.output));
+    client.setState(Client::WRITING);
+    for (size_t i = 0; i < fds.size(); i++)
+    {
+        if (fds[i].fd == process.clientFd)
+        {
+            fds[i].events = POLLOUT;
+            break;
+        }
+    }
+    close(pipeFd);
+    _cgiProcesses.erase(it);
 }

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
+#include <fcntl.h>
 class CgiHandler
 {
 	private:
@@ -21,6 +21,9 @@ class CgiHandler
 		std::map<std::string, std::string> _env;
 		std::string _path;
 		std::string	_inter;
+		pid_t _pid;
+		int	_pipeOut;
+		int	_pipeIn;
 
 		void		setEnv();
 		std::string	executeScript();
@@ -28,7 +31,12 @@ class CgiHandler
 
 	public:
 		CgiHandler(const HTTPRequest &request, const LocationNode &location);
-		~CgiHandler() = default;
+		~CgiHandler();
+
+		pid_t start();
+		int	getPipeFd() const;
+		pid_t getPid() const;
+		void writeBody();
 		
 		std::string execute();
 };

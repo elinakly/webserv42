@@ -79,10 +79,6 @@ void ConfigParser::tokenize(std::ifstream& file)
             _tokens.push_back({WORD, word});
     }
     _tokens.push_back({END, ""});
-    // for(size_t i = 0; i < _tokens.size(); i++)
-    // {
-    //     std::cout << _tokens[i];
-    // }
 }
 
 std::ostream& operator<<(std::ostream& os, const Token& t)

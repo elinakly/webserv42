@@ -22,10 +22,20 @@
 #include "ServerNode.hpp"
 #include "Client.hpp"
 #include "Router.hpp"
+#include "CgiHandler.hpp"
 
 class ServerNode;
 class Client;
-
+struct CgiProcess
+{
+    pid_t pid;
+    int pipeFd;
+    int clientFd;
+    size_t clientIdx;
+    time_t startTime;
+    std::string output;
+    std::unique_ptr<CgiHandler> handler; 
+};
 struct Server{
     int port;
     int max_body_size;
@@ -38,7 +48,6 @@ struct Server{
     std::vector<const LocationNode*> locations;
 };
 
-
 const LocationNode*	findBestLocation(const Server &server, const std::string & requestPath);
 
 class ServerMaster
@@ -49,6 +58,7 @@ class ServerMaster
         std::map<int, std::unique_ptr<Client>> clients;
         std::vector<struct pollfd> fds;
         static volatile sig_atomic_t _running;
+        std::map<int, CgiProcess> _cgiProcesses;
         
     public:
         ServerMaster() = default;
@@ -70,5 +80,6 @@ class ServerMaster
         bool        isMethodAllowed(const std::string &method, const LocationNode *location, Server *config);
         std::vector<std::string> getLocationMethods(const LocationNode *location);
         bool handleCgiRequest(Server* config, Client& client, const std::string& filePath, size_t& idx);
+        void handleCgiOutput(int pipeFd);
 };
 
