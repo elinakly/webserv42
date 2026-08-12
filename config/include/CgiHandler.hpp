@@ -26,7 +26,6 @@ class CgiHandler
 		int	_pipeIn;
 
 		void		setEnv();
-		std::string	executeScript();
 		char		**converEnvToChar();
 
 	public:
@@ -37,6 +36,4 @@ class CgiHandler
 		int	getPipeFd() const;
 		pid_t getPid() const;
 		void writeBody();
-		
-		std::string execute();
 };

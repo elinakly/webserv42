@@ -1,45 +1,5 @@
 #include "CgiHandler.hpp"
 
-pid_t CgiHandler::start()
-{
-	int	PipeIn[2];
-	int	PipeOut[2];
-
-	if (pipe(PipeIn) < 0 || pipe(PipeOut) < 0)
-		throw std::runtime_error("Pipe Failed");
-	_pipeIn = PipeIn[1];
-	_pipeOut = PipeOut[0];
-	_pid = fork();
-
-	if (_pid < 0)
-	{
-		close(PipeIn[0]);
-		close(PipeIn[1]);
-		close(PipeOut[0]);
-		close(PipeOut[1]);
-		throw std::runtime_error("Fork Failed");
-	}
-	if (_pid == 0)
-	{
-		close(PipeIn[1]);
-		close(PipeOut[0]);
-		dup2(PipeIn[0], STDIN_FILENO);
-		dup2(PipeOut[1], STDOUT_FILENO);
-		close(PipeIn[0]);
-		close(PipeOut[1]);
-
-		char *args[3];
-		args[0] = const_cast<char*>(_inter.c_str());
-		args[1] = const_cast<char*>(_path.c_str());
-		args[2] = NULL;
-		execve(args[0], args, converEnvToChar());
-		exit(1);
-	}
-	close(PipeIn[0]);
-	close(PipeOut[1]);
-	fcntl(_pipeOut, F_SETFL, O_NONBLOCK);
-	return(_pid);
-}
 void	CgiHandler::writeBody()
 {
 	if (!_body.empty())
@@ -134,77 +94,44 @@ char **CgiHandler::converEnvToChar()
 	env[i] = NULL;
 	return(env);
 }
-std::string CgiHandler::executeScript()
-{
-	int	pipeIn[2];
-	int	pipeOut[2];
 
-	if (pipe(pipeIn) < 0 || pipe(pipeOut) < 0)
-		throw(std::runtime_error("Pipe Failed"));
-	pid_t	pid = fork();
-	if (pid < 0)
+pid_t CgiHandler::start()
+{
+	int	PipeIn[2];
+	int	PipeOut[2];
+
+	if (pipe(PipeIn) < 0 || pipe(PipeOut) < 0)
+		throw std::runtime_error("Pipe Failed");
+	_pipeIn = PipeIn[1];
+	_pipeOut = PipeOut[0];
+	_pid = fork();
+
+	if (_pid < 0)
 	{
-		close(pipeIn[0]);
-		close(pipeIn[1]);
-		close(pipeOut[0]);
-		close(pipeOut[1]);
-		throw(std::runtime_error("Fork Failed"));
+		close(PipeIn[0]);
+		close(PipeIn[1]);
+		close(PipeOut[0]);
+		close(PipeOut[1]);
+		throw std::runtime_error("Fork Failed");
 	}
-	if (pid == 0)
+	if (_pid == 0)
 	{
-		close(pipeIn[1]);
-		close(pipeOut[0]);
-		dup2(pipeIn[0], STDIN_FILENO);
-		dup2(pipeOut[1], STDOUT_FILENO);
-		close(pipeIn[0]);
-		close(pipeOut[1]);
-		char	*args[3];
+		close(PipeIn[1]);
+		close(PipeOut[0]);
+		dup2(PipeIn[0], STDIN_FILENO);
+		dup2(PipeOut[1], STDOUT_FILENO);
+		close(PipeIn[0]);
+		close(PipeOut[1]);
+
+		char *args[3];
 		args[0] = const_cast<char*>(_inter.c_str());
 		args[1] = const_cast<char*>(_path.c_str());
 		args[2] = NULL;
 		execve(args[0], args, converEnvToChar());
 		exit(1);
 	}
-	else
-	{
-		close(pipeIn[0]);
-		close(pipeOut[1]);
-		if (!_body.empty())
-			write(pipeIn[1], _body.c_str(), _body.size());
-		close(pipeIn[1]);
-		int	status;
-		time_t	start = time(NULL);
-		while (true)
-		{
-			pid_t ret = waitpid(pid, &status, WNOHANG);
-			if (ret == pid)
-				break;
-			if (ret == -1)
-				throw(std::runtime_error("waitpid failed"));
-			if (time(NULL) - start >= 5)
-			{
-				kill(pid, SIGKILL);
-				waitpid(pid, &status, 0);
-				throw(std::runtime_error("CGI timeout"));
-			}
-			usleep(1000);
-		}
-			
-		std::string res;
-		char	buff[1024];
-		int	bytes;
-		
-		while ((bytes = read(pipeOut[0], buff, sizeof(buff) - 1)) > 0)
-		{
-			buff[bytes] = '\0';
-			res += buff;
-		}
-		close(pipeOut[0]);
-		return(res);
-	}
-}
-
-std::string CgiHandler::execute()
-{
-	return (executeScript());
+	close(PipeIn[0]);
+	close(PipeOut[1]);
+	fcntl(_pipeOut, F_SETFL, O_NONBLOCK);
+	return(_pid);
 }
