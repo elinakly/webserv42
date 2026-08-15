@@ -17,7 +17,6 @@ void ServerMaster::initPoll()
 
 void ServerMaster::cleanUp(int fd, size_t &idx)
 {
-    close(fd); 
     clients.erase(fd);
     fds.erase(fds.begin() + idx); // remove from pollfd struct
     if (idx > 0)
@@ -26,7 +25,7 @@ void ServerMaster::cleanUp(int fd, size_t &idx)
         idx = static_cast<size_t>(-1);
 }
 
-void ServerMaster::dispatch(struct pollfd &pfd, size_t &idx)
+void ServerMaster::dispatch(struct pollfd pfd, size_t &idx)
 {
     int fd = pfd.fd; //get fd
     if (_cgiProcesses.find(fd) != _cgiProcesses.end())
@@ -47,7 +46,6 @@ void ServerMaster::dispatch(struct pollfd &pfd, size_t &idx)
             handleAccept(fd); //add to waitlist
         return;
     }
-    //std::map<int, std::unique_ptr<Client>>::iterator
     auto it = clients.find(fd);
     if (it == clients.end())
         return;
@@ -82,7 +80,7 @@ void ServerMaster::pollLoop()
         auto it = clients.find(fds[i].fd);
         if (it == clients.end())
             continue;
-
+        //if this fd is not from HTTP client then we're skiping it
         Client &client = *it->second;
 
         if (client.getState() == Client::READING)
@@ -95,14 +93,19 @@ void ServerMaster::pollLoop()
                 i--;
             }
         }
+        //checking for the timeout
     }
+    //CGI timeout
     for (std::map<int, CgiProcess>::iterator it = _cgiProcesses.begin(); it != _cgiProcesses.end();)
     {
         CgiProcess &process = it->second;
-        if (time(NULL) - process.startTime >= 5)
+        if (time(NULL) - process.startTime >= 10)
         {
+            std::cout << "CGI TIMEOUT: PID = " << process.pid << std::endl;
             kill(process.pid, SIGKILL);
+            //Kills the dependent CGI process
             waitpid(process.pid, NULL, 0);
+            //waiting to close the child process not the get the "Zombie process"
             close(process.pipeFd);
             for (size_t i = 0; i < fds.size(); i++)
             {
@@ -112,6 +115,7 @@ void ServerMaster::pollLoop()
                     break ;
                 }
             }
+            //removes pipe from fds
             std::map<int, std::unique_ptr<Client>>::iterator clientIt;
             clientIt = clients.find(process.clientFd);
             if (clientIt != clients.end())
@@ -123,6 +127,7 @@ void ServerMaster::pollLoop()
                 Server *config = listenSockets[client.getServerFd()];
                 std::string errorPath = router.buildErrorResponsePath(config, "504");
                 client.setResponse(response.build(req, errorPath, "504 Gateway Timeout"));
+                //getting all of the needed info from the client and creates the error message
                 client.setState(Client::WRITING);
                 for (size_t i = 0; i < fds.size(); i++)
                 {

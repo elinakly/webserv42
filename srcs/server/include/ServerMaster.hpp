@@ -71,11 +71,11 @@ class ServerMaster
         void runServers();
         void initPoll();
         void pollLoop();
-        void dispatch(struct pollfd &pfd, size_t &idx);
+        void dispatch(struct pollfd pfd, size_t &idx);
         void handleAccept(int fd);
         void addClient(int newfd, int fd);
         void handleClient(int fd, size_t &idx);
-        void sendResponse(int fd);
+        void sendResponse(int fd);  
         void cleanUp(int fd, size_t &idx);
         bool        isMethodAllowed(const std::string &method, const LocationNode *location, Server *config);
         std::vector<std::string> getLocationMethods(const LocationNode *location);

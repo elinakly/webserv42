@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     HTTPRequest request;
-    if (argc > 2)
+        if (argc > 2)
     {
         std::cerr << "Usage: ./webserv <config_file>\n";
         return 1;
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         std::string config = (argc == 1 ? "config/config.conf" : argv[1]);
 
         ConfigParser parser;
-        ServerMaster master;
+        ServerMaster master;    
 
         parser.parse(config);
         // const std::vector<std::unique_ptr<ServerNode>>&

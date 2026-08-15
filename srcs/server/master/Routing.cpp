@@ -13,14 +13,16 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     _statusReason = "OK";
     _redirectPath.clear();
     std::string filePath;
+    //Every new request assuming that its 200
 
     std::string requestPath = req.getPath();
-    
+    //getting path from the HTTP request
     if (!requestPath.empty() && requestPath[0] != '/')
         requestPath = "/" + requestPath;
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
+    //removing the query string
 
     const LocationNode* location = findBestLocation(*config, requestPath);
     const std::vector<std::string>* methodsToCheck = &config->methods;
@@ -28,7 +30,6 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     const std::string& root = location ? location->getRoot() : config->root_path;
     std::string index = location ? location->getIndexPath() : config->index;
     std::string relativePath = requestPath;
-
     if (location)
     {
         const std::string &locpath = location->getPath();
@@ -41,25 +42,26 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
                 relativePath = "/";
         }
     }
-
+    //this path removes "location" path from the begining of the URL
     if (location)
     {
         const std::vector<std::string>& locationMethods = location->getAllowedMethods();
-        if (!locationMethods.empty()) {
+        if (!locationMethods.empty())
             methodsToCheck = &locationMethods;
-        }
+        //But if a specific location has its own methods then we're using its method
     }
     if (std::find(methodsToCheck->begin(), methodsToCheck->end(), req.getMethod()) == methodsToCheck->end()) 
     {
         _statusCode = "405";
         _statusReason = "Method Not Allowed";
     }
-    
+    // Checking the HTTP methods
     else if (req.getBody().size() > (size_t)config->max_body_size)
     {
         _statusCode = "413";
         _statusReason = "Payload Too Large";
     }
+    //Cheching the size
     else if (location && location->getIsRedir())
     {
         int code = location->getCode();
@@ -89,6 +91,7 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
         _redirectPath = location->getNewPath();
         return "";
     }
+    //if the location redirect then we're checking the status code of the redirect
     if (_statusCode == "200")
     {
         if (req.getMethod() == "POST")
@@ -105,11 +108,13 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
                 }
             }
             filePath = root + upload;
+        //if its post then we're creating the path to get the post
         }
         else
         {
             filePath = buildFilePath(root, requestPath, index, location);
         }
+        //if its GET then we're checking the file of itself
     }
     return filePath;
 }
@@ -117,14 +122,14 @@ std::string Router::buildFilePath(const std::string &root, const std::string &re
 {
     std::string filePath = root + requestPath;
     struct stat pathStats;
-
+    //getting and creating the path
     if (stat(filePath.c_str(), &pathStats) != 0)
     {
         _statusCode = "404";
         _statusReason= "Not Found";
         return "";
     }
-
+    //if file does not exist then its 404
     if (S_ISDIR(pathStats.st_mode))
     {
         std::string dirPath = filePath;
@@ -134,21 +139,20 @@ std::string Router::buildFilePath(const std::string &root, const std::string &re
         if (stat(filePath.c_str(), &pathStats) != 0)
         {
             if (location && location->getAutoIndex())
-            {
                 return(dirPath);
-            }
-            _statusCode = "404"; // index-файл не найден
+            _statusCode = "404";
             _statusReason = "Not Found";
             return "";
         }
     }
+    //if its a directory, and if its index does not exists but autoindex is on then directory itself is returned
     if (!(pathStats.st_mode & S_IROTH)) 
     {
-        _statusCode = "403"; // Доступ запрещен
+        _statusCode = "403";
         _statusReason = "Forbiden";
         return "";
     }
-        
+    //Checking the permisions
         return filePath;
 }
 
@@ -183,17 +187,17 @@ std::string Router::getDefaultErrorPage(int code)
 
 std::string Router::buildErrorResponsePath(Server *config, const std::string &statusCode)
 {
-        // 1. Try to find a configured error_page for the status code.
+    // try to find a configured error page for the status code.
     int code = std::stoi(statusCode);
 
     std::string errorPath = getErrorPagePath(config, statusCode);
     if (!errorPath.empty())
     {
-        // 2. Build absolute path using server root and index fallback.
+        // build absolute path using server root and index fallback.
         std::string filePath = buildFilePath(config->root_path, errorPath, config->index, NULL);
         if (!filePath.empty())
-        // 3. Return the resolved error file path for the response body.
             return filePath;
+        // return the resolved error file path for the response body.
     }
 
     return getDefaultErrorPage(code);
@@ -202,7 +206,7 @@ const LocationNode* Router::findBestLocation(const Server &server, const std::st
 {
     const LocationNode *bestLocation = nullptr;
     size_t len = 0;
-
+    //it searches all of the locations to get the right one
     for (const LocationNode *locationPtr : server.locations)
     {
         const std::string &locPath = locationPtr->getPath();
@@ -233,29 +237,34 @@ const LocationNode* Router::findBestLocation(const Server &server, const std::st
 std::string Router::generateDirectoryListing(const std::string &path, const std::string &url)
 {
     DIR *dir = opendir(path.c_str());
-
+    //opens the directory from the given path
     if (!dir)
         return("");
+    //if directory cannot be opened then returns empty page
     std::stringstream html;
-
+    //creates page for the HTML
     html << "<html><body>";
     html << "<h1>Index of " << url << "</h1>";
     html << "<ul>";
-
+    //this creates the begining of the HTML page
     struct dirent *entry;
+    //readdir returns the paths of the pages
     while ((entry = readdir(dir)) != NULL)
     {
         std::string name = entry->d_name;
         html << "<li><a href=\"";
+        //creates a link
         if (url.back() != '/')
             html << url << "/";
         else
             html << url;
+        //this checks if theres a "/" at the end and if theres not then adds it
         html << name << "\">";
         html << name;
         html << "</a></li>";
     }
-    html << "</ul><body></html>";
+    html << "</ul></body></html>";
+    //closes the HTML page
     closedir(dir);
     return(html.str());
 }

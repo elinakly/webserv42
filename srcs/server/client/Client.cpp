@@ -53,13 +53,3 @@ void Client::setState (State state)
 {
     _state = state;
 }
-
-// void Client::setHTTPRequest(std::unique_ptr<HTTPRequest> request)
-// { 
-//     _HTTPRequest = std::move(request);
-// }
-
-// void Client::setHTTPResponse(std::unique_ptr<HTTPResponse> response) 
-// { 
-//     _HTTPResponse= std::move(response); 
-// }

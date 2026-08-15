@@ -15,7 +15,6 @@ std::string HTTPResponse::getMimeTypes(const std::string& path)
     return "application/octet-stream"; //default mime type
 }
 
-
 std::string HTTPResponse::buildStatusLine()
 {
     return _version + " " + _status_reason + "\r\n";

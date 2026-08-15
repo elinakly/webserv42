@@ -4,6 +4,7 @@ void	CgiHandler::writeBody()
 {
 	if (!_body.empty())
 		write(_pipeIn, _body.c_str(), _body.size());
+	//it passes the body of the HTTP request to the CGI via stdin
 	close(_pipeIn);
 	_pipeIn = -1;
 }
@@ -22,27 +23,29 @@ CgiHandler::CgiHandler(const HTTPRequest &request, const LocationNode &location)
 	this->_body = request.getBody();
 	this->_uri = request.getUri();
 	this->_method = request.getMethod();
+	//Getting the info from the header
 	size_t tmpPath;
 	std::string	extension;
 	std::map<std::string, std::string> map;
 
-	// Отделяем query string от пути
 	std::string requestPath = request.getPath();
 	size_t queryPos = requestPath.find("?");
 	if (queryPos != std::string::npos)
 		requestPath = requestPath.substr(0, queryPos);
-
+	//Getting absolute path
 	_path = location.getRoot() + requestPath;
-
+	//Creating the path for the CGI
 	tmpPath = _path.rfind(".");
 	if (tmpPath == std::string::npos)
 		throw std::runtime_error("CGI extension not found");
 	extension = _path.substr(tmpPath);
+	//determiniting the extension
 	map = location.getCgi();
 	auto it = map.find(extension);
 	if (it == map.end())
 		throw std::runtime_error("Unsuported CGI Extension");
 	_inter = it->second;
+	//setting the interpritator AKA /usr/bin/python3
 	this->setEnv();
 }
 CgiHandler::~CgiHandler()
@@ -81,7 +84,7 @@ void	CgiHandler::setEnv()
 	_env["SERVER_PORT"] = "8080";	
 }
 char **CgiHandler::converEnvToChar()
-{	
+{
 	char **env = new char *[_env.size() + 1];
 	size_t i = 0;
 
@@ -100,6 +103,7 @@ pid_t CgiHandler::start()
 	int	PipeIn[2];
 	int	PipeOut[2];
 
+	//Creating 2 pipes one pipe goes from Servers to CGI the other one goes from  CGI to Server
 	if (pipe(PipeIn) < 0 || pipe(PipeOut) < 0)
 		throw std::runtime_error("Pipe Failed");
 	_pipeIn = PipeIn[1];
@@ -114,6 +118,7 @@ pid_t CgiHandler::start()
 		close(PipeOut[1]);
 		throw std::runtime_error("Fork Failed");
 	}
+	//Child proccess has to only read from the pipe
 	if (_pid == 0)
 	{
 		close(PipeIn[1]);
@@ -128,10 +133,12 @@ pid_t CgiHandler::start()
 		args[1] = const_cast<char*>(_path.c_str());
 		args[2] = NULL;
 		execve(args[0], args, converEnvToChar());
+		//Setting the execve to redirect to the path to run the CGI
 		exit(1);
 	}
 	close(PipeIn[0]);
 	close(PipeOut[1]);
 	fcntl(_pipeOut, F_SETFL, O_NONBLOCK);
+	//it switches the pipe from reading from CGI to non blocking mode
 	return(_pid);
 }

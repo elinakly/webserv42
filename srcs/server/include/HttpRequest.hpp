@@ -15,22 +15,13 @@ class HTTPRequest {
         std::string _uri;
 		std::map<std::string, std::string>_headers;
 	public:
-		// void	setMethod(std::string method);
-		// void	setPath(std::string path);
-		// void	setVersion(std::string version);
-		// void	setBody(std::string body);
-		// void	setRawRequest(std::string rawRequest);
-		// void	setRequest(std::string request);
-		// void	setHeaders(std::map<std::string, std::string>headers);
 		void	setStatus(std::string status) {_status_reason = status;}
         const std::string	getMethod() const {return(_method);};
         const std::string	getPath() const;
         const std::string 	getStatusReason() const;
         const std::string	getVersion() const;
         const std::string	getBody() const {return(_body);};
-        // std::string	getRawRequest();
         const std::string	getRequest() const {return(_req);};
-        // std::map<std::string, std::string> getHeaders();
         const std::string getUri()const {return(_uri);};
         HTTPRequest() ;
 		~HTTPRequest() = default;

@@ -11,31 +11,31 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
 {
     Router router;
     HTTPRequest& req = client.getRequest();
-
+    //Getting HTTP from the current client
     std::string requestPath = req.getPath();
     size_t queryPos = requestPath.find("?");
     if (queryPos != std::string::npos)
         requestPath = requestPath.substr(0, queryPos);
-
+    //Removing the query string
     const LocationNode* location = router.findBestLocation(*config, requestPath);
     if (!location)
         return false;
-
+    //Tries to find the location for the CGI if there's no location found, then this is not CGI
     const std::map<std::string, std::string>& cgiMap = location->getCgi();
-
+    //getting the CGI map
     std::string extension;
     size_t dotPos = filePath.rfind('.');
     if (dotPos != std::string::npos)
         extension = filePath.substr(dotPos);
-
-    // Не CGI — продолжаем обычную обработку
+    //gets the extension
     if (cgiMap.find(extension) == cgiMap.end())
         return false;
-
+    //If the file is not configured as CGI, continue with normal HTTP handling
     try
     {
         std::unique_ptr<CgiHandler> cgiHandler(new CgiHandler(req, *location));
         pid_t pid = cgiHandler->start();
+        //starts the CGI
         cgiHandler->writeBody();
         int pipeFd = cgiHandler->getPipeFd();
         fcntl(pipeFd, F_SETFL, O_NONBLOCK);
@@ -46,6 +46,7 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
         process.clientIdx = idx;
         process.startTime = time(NULL);
         process.output = "";
+        //fils the information for the server to handle the CGI
         process.handler = std::move(cgiHandler);
         _cgiProcesses[pipeFd] = std::move(process);
         pollfd cgiPoll;
@@ -70,7 +71,6 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
             statusCode = "504";
             statusLine = "504 Gateway Timeout";
         }
-
         std::string errorPath = router.buildErrorResponsePath(config, statusCode);
 
         client.setResponse(response.build(req, errorPath, statusLine));
@@ -99,19 +99,22 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         cleanUp(fd, idx);
         return;
     }
+    //if theres no client then closing the connection
     Client &client = *it->second;
     client.appendData(buffer, bytes);
+    //getting the information about client 
     client._lastActivity = time(NULL);
-    
+    //updating the last activity time
     if (!client.hasCompleteRequest())
         return;
+    //check for the request complete
     bool parseOk = client.processRequest();
     HTTPRequest &req = client.getRequest();
     Server *config = listenSockets[client.getServerFd()];
+    //getting the config of the server
     std::string root = config->root_path;
     std::string index = config->index;
 
-    // If parsing failed, respond with 400 before routing.
     if (!parseOk)
     { 
         std::string statusCode = "400";
@@ -125,8 +128,8 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         fds[idx].events = POLLIN | POLLOUT;
         return;
     }
+    // If parsing failed respond with 400 before routing
     std::string filePath = router.routeRequest(req, config);
-    
     std::string statusCode = router.getStatusCode();
     std::string statusReason = router.getStatusReason();
     if (statusCode == "200" && !filePath.empty())
@@ -134,35 +137,37 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         if (handleCgiRequest(config, client, filePath, idx))
             return;
     }
-    if (statusCode == "200" &&
-    req.getMethod() == "POST")
-{
-    struct stat st;
-    if (stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+    //Checks if this request should be handled by CGI
+    if (statusCode == "200" && req.getMethod() == "POST")
     {
-        if (filePath.back() != '/')
-            filePath += '/';
+        struct stat st;
+        if (stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+        {
+            if (filePath.back() != '/')
+                filePath += '/';
 
-        filePath += "upload.bin";
+            filePath += "upload.bin";
+        }
+        //Saves POST body as upload.bin inside the directory
+        std::ofstream out(filePath.c_str(), std::ios::binary);
+
+        if (!out)
+        {
+            statusCode = "500";
+            statusReason = "Internal Server Error";
+            filePath = router.buildErrorResponsePath(config, statusCode);
+        }
+        //if directory cannot be opened then its "500" error
+        else
+        {
+            out.write(req.getBody().c_str(), req.getBody().size());
+            out.close();
+
+            statusCode = "201";
+            statusReason = "Created";
+        }
+        //else just writing body
     }
-
-    std::ofstream out(filePath.c_str(), std::ios::binary);
-
-    if (!out)
-    {
-        statusCode = "500";
-        statusReason = "Internal Server Error";
-        filePath = router.buildErrorResponsePath(config, statusCode);
-    }
-    else
-    {
-        out.write(req.getBody().c_str(), req.getBody().size());
-        out.close();
-
-        statusCode = "201";
-        statusReason = "Created";
-    }
-}
     if (statusCode == "200" && req.getMethod() == "DELETE")
     {
         if (!filePath.empty() && unlink(filePath.c_str()) == 0)
@@ -192,13 +197,12 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         }
     }
 
-    // If request failed, try to serve a configured error page for the status code.
-    // Redirects are handled separately and must not be converted into error pages.
+    // If request failed, try to serve a configured error page for the status code
+    // Redirects are handled separately and must not be converted into error pages
     if (statusCode[0] != '2' && statusCode[0] != '3')
         filePath = router.buildErrorResponsePath(config, statusCode);
     bool isDir = false;
     std::string dirBody;
-
     struct stat st;
     if (statusCode == "200" && !filePath.empty() && stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
     {
@@ -209,17 +213,16 @@ void ServerMaster::handleClient(int fd, size_t &idx)
             isDir = true;
         }
     }
+    //Check for the autoindex. If its on, then creates the HTML
     HTTPResponse response;
     std::string extraHeaders;
 
     if (statusCode == "302" && !router.getRedirectPath().empty())
         extraHeaders = "Location: " + router.getRedirectPath() + "\r\n";
-
     std::string statusLine = statusCode;
+
     if (!statusReason.empty())
         statusLine += " " + statusReason;
-
-
     if (isDir)
     {
         std::string rawResponse;
@@ -232,15 +235,16 @@ void ServerMaster::handleClient(int fd, size_t &idx)
         rawResponse += "Connection: close\r\n";
         rawResponse += "\r\n";
         rawResponse += dirBody;
-
         client.setResponse(rawResponse);
     }
+    //if directory requested then we're creating the HTTP response
     else
     {
         client.setResponse(
             response.build(req, filePath, statusLine, extraHeaders)
         );
     }
+    //if requested path is not an directory then we're building a response
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
 }
@@ -248,7 +252,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
 bool Client::processRequest()
 {
     _req = HTTPRequest(_buffer);    
-    bool ok = _req.parse(); // make parser
+    bool ok = _req.parse();
     resetBytesSent();
     return ok;
 }
@@ -257,19 +261,24 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
     std::map<int, CgiProcess>::iterator it = _cgiProcesses.find(pipeFd);
     if (it == _cgiProcesses.end())
         return ;
+    //Finding the CGI process
     CgiProcess &process = it->second;
+    //getting info from CGI
     char buff[4096];
     
     while (true)
     {
         ssize_t bytes = read(pipeFd, buff, sizeof(buff));
+        //reading the CGI result
         if (bytes > 0)
         {
             process.output.append(buff, bytes);
             continue;
         }
+        //if theres some info came then we're adding the to process.output
         if (bytes == 0)
             break;
+        //if theres currently no data available, wait for the next poll event
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
         std::cerr << "CGI pipe read error" << std::endl;
@@ -284,8 +293,10 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
         std::cerr << "waitpid failed" << std::endl;
         return;
     }
+    //checking the status of CGI. if 0 then it still works else if -1 then theres an error occured
     std::map<int, std::unique_ptr<Client>>::iterator clientIt;
     clientIt = clients.find(process.clientFd);
+    //finding a client socket
     if (clientIt == clients.end())
     {
         close(pipeFd);
@@ -294,8 +305,10 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
     }
     Client &client = *clientIt->second;
     HTTPRequest &req = client.getRequest();
+    //getting the HTTP request
     HTTPResponse response;
     client.setResponse(response.buildCgiResponse(req, "200 OK", process.output));
+    //rebuilding CGI output into HTTP response
     client.setState(Client::WRITING);
     for (size_t i = 0; i < fds.size(); i++)
     {
@@ -305,6 +318,6 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
             break;
         }
     }
-    close(pipeFd);
+    // close(pipeFd);
     _cgiProcesses.erase(it);
 }

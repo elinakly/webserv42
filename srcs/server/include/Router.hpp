@@ -25,7 +25,7 @@ public:
 	std::string	getStatusReason() {return(_statusReason);};
 	std::string getRedirectPath() {return(_redirectPath);};
 	std::string &getDirectoryListing() {return(_directoryListing);};
-    std::string Path(const std::string &root, const std::string &requestPath, std::string &index);
+    // std::string Path(const std::string &root, const std::string &requestPath, std::string &index);
     
     const LocationNode* findBestLocation(const Server &server, const std::string & requestPath);
     std::string getErrorPagePath(Server *config, const std::string &statusCode);
