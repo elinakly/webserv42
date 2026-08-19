@@ -25,7 +25,7 @@ query_string = os.environ.get('QUERY_STRING', '')
 content_length = os.environ.get('CONTENT_LENGTH', '0')
 content_type = os.environ.get('CONTENT_TYPE', 'unknown')
 body = read_body()
-time.sleep(5)
+time.sleep(30)
 response_body = (
 	'Method: {}\n'
 	'Query string: {}\n'

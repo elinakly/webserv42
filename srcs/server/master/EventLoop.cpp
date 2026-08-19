@@ -89,8 +89,18 @@ void ServerMaster::pollLoop()
             {
                 std::cout << "HTTP TIMEOUT: " << fds[i].fd << std::endl;
 
-                cleanUp(fds[i].fd, i);
-                i--;
+                HTTPRequest &req = client.getRequest();
+                HTTPResponse response;
+                Router router;
+
+                Server *config = listenSockets[client.getServerFd()];
+
+                std::string errorPath =
+                    router.buildErrorResponsePath(config, "408");
+
+                client.setResponse(response.build(req,errorPath,"408 Request Timeout"));
+                client.setState(Client::WRITING);
+                fds[i].events = POLLOUT;
             }
         }
         //checking for the timeout
