@@ -12,6 +12,8 @@ std::string HTTPResponse::getMimeTypes(const std::string& path)
         return "image/jpeg";
     if (path.size() >= 4 && path.substr(path.size() - 4) == ".ico") //special image file format used for website icons (favicons)
         return "image/x-icon"; 
+    if (path.size() >= 4 && path.substr(path.size() - 4) == ".txt")
+        return "text/plain; charset=utf-8";
     return "application/octet-stream"; //default mime type
 }
 
