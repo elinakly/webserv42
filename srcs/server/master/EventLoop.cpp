@@ -57,7 +57,10 @@ void ServerMaster::dispatch(struct pollfd pfd, size_t &idx)
         
     if (pfd.revents & POLLOUT && (client.getState() == Client::WRITING)) 
     {
+        std::cout << "POLLOUT fd=" << fd << std::endl;
         sendResponse(fd);   //write (send())
+            std::cout << "AFTER sendResponse state="
+              << client.getState() << std::endl;
         if (client.getState() == Client::DONE)
         {   
             cleanUp(fd, idx);

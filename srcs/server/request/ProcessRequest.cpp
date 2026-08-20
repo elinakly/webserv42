@@ -278,11 +278,14 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
         }
         //if theres some info came then we're adding the to process.output
         if (bytes == 0)
-            break;
+        {
+            std::cout << "CGI PIPE EOF" << std::endl;
+                        break;
+        }
+
         //if theres currently no data available, wait for the next poll event
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
-        std::cerr << "CGI pipe read error" << std::endl;
         break;
     }
     int status;
@@ -291,14 +294,16 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
         return;
     if (res == -1)
     {
-        std::cerr << "waitpid failed" << std::endl;
+        perror("waitpid");
+        if (errno == ECHILD)
+        {
+            _cgiProcesses.erase(it);
+        }
         return;
     }
     //checking the status of CGI. if 0 then it still works else if -1 then theres an error occured
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
     {
-        std::cerr << "CGI process failed" << std::endl;
-
         std::map<int, std::unique_ptr<Client>>::iterator clientIt;
         clientIt = clients.find(process.clientFd);
 
@@ -312,14 +317,8 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
 
             std::string statusCode = "500";
             std::string statusLine = "500 Internal Server Error";
-
-            std::string errorPath =
-                router.buildErrorResponsePath(process.server, statusCode);
-
-            client.setResponse(
-                response.build(req, errorPath, statusLine)
-            );
-
+            std::string errorPath =router.buildErrorResponsePath(process.server, statusCode);
+            client.setResponse(response.build(req, errorPath, statusLine));
             client.setState(Client::WRITING);
 
             for (size_t i = 0; i < fds.size(); i++)
@@ -350,14 +349,28 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
     client.setResponse(response.buildCgiResponse(req, "200 OK", process.output));
     //rebuilding CGI output into HTTP response
     client.setState(Client::WRITING);
+    std::cout << "=== FDS AFTER CGI ===" << std::endl;
+    for (size_t i = 0; i < fds.size(); i++)
+    {
+        if (fds[i].fd == pipeFd)
+        {
+            fds[i].fd = -1;
+            fds[i].events = 0;
+            fds[i].revents = 0;
+            break;
+        }
+    }
     for (size_t i = 0; i < fds.size(); i++)
     {
         if (fds[i].fd == process.clientFd)
         {
-            fds[i].events = POLLOUT;
-            break;
+            if (fds[i].fd == process.clientFd)
+            {
+                fds[i].events = POLLOUT;
+                fds[i].revents = 0;
+                break;
+            }
         }
     }
-    // close(pipeFd);
     _cgiProcesses.erase(it);
 }

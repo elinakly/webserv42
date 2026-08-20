@@ -67,6 +67,5 @@ void ServerMaster::runServers()
     {
         pollLoop();
     }
-    std::cerr << "RUNSERVERS FINISHED\n";
-    // shutdownServer();
+     // shutdownServer();
 }
