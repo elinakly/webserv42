@@ -17,6 +17,7 @@ void ServerMaster::initPoll()
 
 void ServerMaster::cleanUp(int fd, size_t &idx)
 {
+    close(fd);
     clients.erase(fd);
     fds.erase(fds.begin() + idx); // remove from pollfd struct
     if (idx > 0)
