@@ -46,6 +46,7 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
         process.clientIdx = idx;
         process.startTime = time(NULL);
         process.output = "";
+        process.server = config;
         //fils the information for the server to handle the CGI
         process.handler = std::move(cgiHandler);
         _cgiProcesses[pipeFd] = std::move(process);
@@ -294,12 +295,51 @@ void    ServerMaster::handleCgiOutput(int pipeFd)
         return;
     }
     //checking the status of CGI. if 0 then it still works else if -1 then theres an error occured
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    {
+        std::cerr << "CGI process failed" << std::endl;
+
+        std::map<int, std::unique_ptr<Client>>::iterator clientIt;
+        clientIt = clients.find(process.clientFd);
+
+        if (clientIt != clients.end())
+        {
+            Client &client = *clientIt->second;
+            HTTPRequest &req = client.getRequest();
+
+            HTTPResponse response;
+            Router router;
+
+            std::string statusCode = "500";
+            std::string statusLine = "500 Internal Server Error";
+
+            std::string errorPath =
+                router.buildErrorResponsePath(process.server, statusCode);
+
+            client.setResponse(
+                response.build(req, errorPath, statusLine)
+            );
+
+            client.setState(Client::WRITING);
+
+            for (size_t i = 0; i < fds.size(); i++)
+            {
+                if (fds[i].fd == process.clientFd)
+                {
+                    fds[i].events = POLLOUT;
+                    break;
+                }
+            }
+        }
+        _cgiProcesses.erase(it);
+        return;
+    }
+    //If the CGI process exits with an error, sends a 500 Internal Sever Error
     std::map<int, std::unique_ptr<Client>>::iterator clientIt;
     clientIt = clients.find(process.clientFd);
     //finding a client socket
     if (clientIt == clients.end())
     {
-        close(pipeFd);
         _cgiProcesses.erase(it);
         return;
     }

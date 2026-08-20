@@ -26,6 +26,7 @@
 
 class ServerNode;
 class Client;
+struct Server;
 struct CgiProcess
 {
     pid_t pid;
@@ -35,6 +36,7 @@ struct CgiProcess
     time_t startTime;
     std::string output;
     std::unique_ptr<CgiHandler> handler; 
+    Server *server;
 };
 struct Server{
     int port;

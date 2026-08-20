@@ -127,10 +127,24 @@ pid_t CgiHandler::start()
 		dup2(PipeOut[1], STDOUT_FILENO);
 		close(PipeIn[0]);
 		close(PipeOut[1]);
-
+		//extracts the CGI directory and script name fx ./www/test.py -> ./www + test.py
+		std::string scriptPath = _path;
+		size_t slash = scriptPath.rfind('/');
+		std::string directory = ".";
+		if (slash != std::string::npos)
+		{
+			directory = scriptPath.substr(0, slash);
+			scriptPath = scriptPath.substr(slash + 1);
+		}
+		//runs the CGI from its own directory
+		if (chdir(directory.c_str()) == -1)
+		{
+			perror("chdir");
+			exit(1);
+		}
 		char *args[3];
 		args[0] = const_cast<char*>(_inter.c_str());
-		args[1] = const_cast<char*>(_path.c_str());
+		args[1] = const_cast<char*>(scriptPath.c_str());
 		args[2] = NULL;
 		execve(args[0], args, converEnvToChar());
 		//Setting the execve to redirect to the path to run the CGI

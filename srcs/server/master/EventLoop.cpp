@@ -72,6 +72,8 @@ void ServerMaster::pollLoop()
 
     if (ready < 0)
     {
+        if (errno == EINTR)
+            return;
         perror("poll");
         return;
     }

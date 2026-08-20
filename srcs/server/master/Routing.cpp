@@ -252,6 +252,8 @@ std::string Router::generateDirectoryListing(const std::string &path, const std:
     while ((entry = readdir(dir)) != NULL)
     {
         std::string name = entry->d_name;
+        if (name == "." || name == "..")
+            continue;
         html << "<li><a href=\"";
         //creates a link
         if (url.back() != '/')
