@@ -6,6 +6,16 @@ volatile sig_atomic_t ServerMaster::_running = true;
 
 ServerMaster::~ServerMaster()
 {
+    for (std::map<int, CgiProcess>::iterator it = _cgiProcesses.begin();
+        it != _cgiProcesses.end();
+        ++it)
+    {
+        it->second.handler->releasePipeOut();
+        close(it->second.pipeFd);
+    }
+
+    _cgiProcesses.clear();
+
     for (std::map<int, Server*>::iterator it = listenSockets.begin();
         it != listenSockets.end();
         ++it)

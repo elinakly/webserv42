@@ -61,6 +61,7 @@ class ServerMaster
         std::vector<struct pollfd> fds;
         static volatile sig_atomic_t _running;
         std::map<int, CgiProcess> _cgiProcesses;
+        std::vector<int> _cgiFdsToClose;
         
     public:
         ServerMaster() = default;

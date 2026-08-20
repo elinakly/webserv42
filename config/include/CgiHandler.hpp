@@ -36,4 +36,5 @@ class CgiHandler
 		int	getPipeFd() const;
 		pid_t getPid() const;
 		void writeBody();
+		void releasePipeOut() {_pipeOut = -1;};
 };

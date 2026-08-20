@@ -73,7 +73,6 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
             statusLine = "504 Gateway Timeout";
         }
         std::string errorPath = router.buildErrorResponsePath(config, statusCode);
-
         client.setResponse(response.build(req, errorPath, statusLine));
         client.setState(Client::WRITING);
         fds[idx].events = POLLIN | POLLOUT;
@@ -257,120 +256,108 @@ bool Client::processRequest()
     resetBytesSent();
     return ok;
 }
-void    ServerMaster::handleCgiOutput(int pipeFd)
+void ServerMaster::handleCgiOutput(int pipeFd)
 {
-    std::map<int, CgiProcess>::iterator it = _cgiProcesses.find(pipeFd);
+    std::map<int, CgiProcess>::iterator it;
+    it = _cgiProcesses.find(pipeFd);
+
     if (it == _cgiProcesses.end())
-        return ;
-    //Finding the CGI process
+        return;
+
     CgiProcess &process = it->second;
-    //getting info from CGI
+
     char buff[4096];
-    
+
     while (true)
     {
         ssize_t bytes = read(pipeFd, buff, sizeof(buff));
-        //reading the CGI result
+
         if (bytes > 0)
         {
             process.output.append(buff, bytes);
             continue;
         }
-        //if theres some info came then we're adding the to process.output
-        if (bytes == 0)
-        {
-            std::cout << "CGI PIPE EOF" << std::endl;
-                        break;
-        }
 
-        //if theres currently no data available, wait for the next poll event
+        if (bytes == 0)
+            break;
+
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
+
         break;
     }
+
     int status;
     pid_t res = waitpid(process.pid, &status, WNOHANG);
+
     if (res == 0)
         return;
+
     if (res == -1)
     {
         perror("waitpid");
-        if (errno == ECHILD)
-        {
-            _cgiProcesses.erase(it);
-        }
         return;
     }
-    //checking the status of CGI. if 0 then it still works else if -1 then theres an error occured
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+
+    std::map<int, std::unique_ptr<Client> >::iterator clientIt;
+    clientIt = clients.find(process.clientFd);
+
+    if (clientIt != clients.end())
     {
-        std::map<int, std::unique_ptr<Client>>::iterator clientIt;
-        clientIt = clients.find(process.clientFd);
+        Client &client = *clientIt->second;
+        HTTPRequest &req = client.getRequest();
+        HTTPResponse response;
 
-        if (clientIt != clients.end())
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         {
-            Client &client = *clientIt->second;
-            HTTPRequest &req = client.getRequest();
-
-            HTTPResponse response;
             Router router;
 
-            std::string statusCode = "500";
-            std::string statusLine = "500 Internal Server Error";
-            std::string errorPath =router.buildErrorResponsePath(process.server, statusCode);
-            client.setResponse(response.build(req, errorPath, statusLine));
-            client.setState(Client::WRITING);
+            std::string errorPath;
+            errorPath = router.buildErrorResponsePath(process.server, "500");
 
-            for (size_t i = 0; i < fds.size(); i++)
-            {
-                if (fds[i].fd == process.clientFd)
-                {
-                    fds[i].events = POLLOUT;
-                    break;
-                }
-            }
+            client.setResponse(
+                response.build(
+                    req,
+                    errorPath,
+                    "500 Internal Server Error"
+                )
+            );
         }
-        _cgiProcesses.erase(it);
-        return;
-    }
-    //If the CGI process exits with an error, sends a 500 Internal Sever Error
-    std::map<int, std::unique_ptr<Client>>::iterator clientIt;
-    clientIt = clients.find(process.clientFd);
-    //finding a client socket
-    if (clientIt == clients.end())
-    {
-        _cgiProcesses.erase(it);
-        return;
-    }
-    Client &client = *clientIt->second;
-    HTTPRequest &req = client.getRequest();
-    //getting the HTTP request
-    HTTPResponse response;
-    client.setResponse(response.buildCgiResponse(req, "200 OK", process.output));
-    //rebuilding CGI output into HTTP response
-    client.setState(Client::WRITING);
-    std::cout << "=== FDS AFTER CGI ===" << std::endl;
-    for (size_t i = 0; i < fds.size(); i++)
-    {
-        if (fds[i].fd == pipeFd)
+        else
         {
-            fds[i].fd = -1;
-            fds[i].events = 0;
-            fds[i].revents = 0;
-            break;
+            client.setResponse(
+                response.buildCgiResponse(
+                    req,
+                    "200 OK",
+                    process.output
+                )
+            );
         }
-    }
-    for (size_t i = 0; i < fds.size(); i++)
-    {
-        if (fds[i].fd == process.clientFd)
+
+        client.setState(Client::WRITING);
+
+        for (size_t i = 0; i < fds.size(); i++)
         {
             if (fds[i].fd == process.clientFd)
             {
                 fds[i].events = POLLOUT;
-                fds[i].revents = 0;
                 break;
             }
         }
     }
+
+    process.handler->releasePipeOut();
+
+    close(pipeFd);
+
+    for (size_t i = 0; i < fds.size(); i++)
+    {
+        if (fds[i].fd == pipeFd)
+        {
+            fds.erase(fds.begin() + i);
+            break;
+        }
+    }
+
     _cgiProcesses.erase(it);
 }

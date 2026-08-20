@@ -121,7 +121,6 @@ pid_t CgiHandler::start()
 	//Child proccess has to only read from the pipe
 	if (_pid == 0)
 	{
-		std::cout << "CGI CHILD: pid=" << getpid() << std::endl;
 		close(PipeIn[1]);
 		close(PipeOut[0]);
 		dup2(PipeIn[0], STDIN_FILENO);
@@ -148,11 +147,8 @@ pid_t CgiHandler::start()
 		args[1] = const_cast<char*>(scriptPath.c_str());
 		args[2] = NULL;
 		execve(args[0], args, converEnvToChar());
-		std::cout << "CGI EXEC: " << _inter << " " << scriptPath << std::endl;
 		//Setting the execve to redirect to the path to run the CGI
 		exit(1);
-		
-	std::cout << "CGI PARENT: pid=" << _pid << std::endl;
 	}
 	close(PipeIn[0]);
 	close(PipeOut[1]);

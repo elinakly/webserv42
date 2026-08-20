@@ -17,11 +17,15 @@ void ServerMaster::initPoll()
 
 void ServerMaster::cleanUp(int fd, size_t &idx)
 {
-    close(fd);
+    if (fd >= 0)
+        close(fd);
+
     clients.erase(fd);
-    fds.erase(fds.begin() + idx); // remove from pollfd struct
+
+    fds.erase(fds.begin() + idx);
+
     if (idx > 0)
-        idx--; //come back to not to lose next fd
+        idx--;
     else
         idx = static_cast<size_t>(-1);
 }
@@ -29,6 +33,9 @@ void ServerMaster::cleanUp(int fd, size_t &idx)
 void ServerMaster::dispatch(struct pollfd pfd, size_t &idx)
 {
     int fd = pfd.fd; //get fd
+    
+    if (fd == -1)
+        return;
     if (_cgiProcesses.find(fd) != _cgiProcesses.end())
     {
         if (pfd.revents & (POLLIN | POLLHUP | POLLERR))
@@ -57,10 +64,7 @@ void ServerMaster::dispatch(struct pollfd pfd, size_t &idx)
         
     if (pfd.revents & POLLOUT && (client.getState() == Client::WRITING)) 
     {
-        std::cout << "POLLOUT fd=" << fd << std::endl;
         sendResponse(fd);   //write (send())
-            std::cout << "AFTER sendResponse state="
-              << client.getState() << std::endl;
         if (client.getState() == Client::DONE)
         {   
             cleanUp(fd, idx);
@@ -112,48 +116,69 @@ void ServerMaster::pollLoop()
         //checking for the timeout
     }
     //CGI timeout
-    for (std::map<int, CgiProcess>::iterator it = _cgiProcesses.begin(); it != _cgiProcesses.end();)
+    for (std::map<int, CgiProcess>::iterator it = _cgiProcesses.begin();
+        it != _cgiProcesses.end();)
     {
         CgiProcess &process = it->second;
+
         if (time(NULL) - process.startTime >= 10)
         {
-            std::cout << "CGI TIMEOUT: PID = " << process.pid << std::endl;
+            std::cout << "CGI TIMEOUT: PID = "
+                    << process.pid << std::endl;
+
             kill(process.pid, SIGKILL);
-            //Kills the dependent CGI process
             waitpid(process.pid, NULL, 0);
-            //waiting to close the child process not the get the "Zombie process"
+
+            process.handler->releasePipeOut();
+
             close(process.pipeFd);
+
             for (size_t i = 0; i < fds.size(); i++)
             {
                 if (fds[i].fd == process.pipeFd)
                 {
                     fds.erase(fds.begin() + i);
-                    break ;
+                    break;
                 }
             }
-            //removes pipe from fds
-            std::map<int, std::unique_ptr<Client>>::iterator clientIt;
+
+            std::map<int, std::unique_ptr<Client> >::iterator clientIt;
             clientIt = clients.find(process.clientFd);
+
             if (clientIt != clients.end())
             {
                 Client &client = *clientIt->second;
                 HTTPRequest &req = client.getRequest();
+
                 Router router;
                 HTTPResponse response;
-                Server *config = listenSockets[client.getServerFd()];
-                std::string errorPath = router.buildErrorResponsePath(config, "504");
-                client.setResponse(response.build(req, errorPath, "504 Gateway Timeout"));
-                //getting all of the needed info from the client and creates the error message
+
+                Server *config;
+                config = listenSockets[client.getServerFd()];
+
+                std::string errorPath;
+                errorPath = router.buildErrorResponsePath(config, "504");
+
+                client.setResponse(
+                    response.build(
+                        req,
+                        errorPath,
+                        "504 Gateway Timeout"
+                    )
+                );
+
                 client.setState(Client::WRITING);
+
                 for (size_t i = 0; i < fds.size(); i++)
                 {
                     if (fds[i].fd == process.clientFd)
                     {
-                        fds[i].events = POLLIN | POLLOUT;
-                        break ;
+                        fds[i].events = POLLOUT;
+                        break;
                     }
                 }
             }
+
             it = _cgiProcesses.erase(it);
         }
         else
