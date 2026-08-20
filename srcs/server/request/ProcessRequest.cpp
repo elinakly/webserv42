@@ -31,53 +31,33 @@ bool ServerMaster::handleCgiRequest(Server* config, Client& client, const std::s
     if (cgiMap.find(extension) == cgiMap.end())
         return false;
     //If the file is not configured as CGI, continue with normal HTTP handling
-    try
-    {
-        std::unique_ptr<CgiHandler> cgiHandler(new CgiHandler(req, *location));
-        pid_t pid = cgiHandler->start();
-        //starts the CGI
-        cgiHandler->writeBody();
-        int pipeFd = cgiHandler->getPipeFd();
-        fcntl(pipeFd, F_SETFL, O_NONBLOCK);
-        CgiProcess process;
-        process.pid = pid;
-        process.pipeFd = pipeFd;
-        process.clientFd = fds[idx].fd;
-        process.clientIdx = idx;
-        process.startTime = time(NULL);
-        process.output = "";
-        process.server = config;
-        //fils the information for the server to handle the CGI
-        process.handler = std::move(cgiHandler);
-        _cgiProcesses[pipeFd] = std::move(process);
-        pollfd cgiPoll;
-        cgiPoll.fd = pipeFd;
-        cgiPoll.events = POLLIN;
-        cgiPoll.revents = 0;
-        fds.push_back(cgiPoll);
-        fds[idx].events = 0;
-        return (true);
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "CGI Runtime Error: " << e.what() << std::endl;
-
-        HTTPResponse response;
-
-        std::string statusCode = "500";
-        std::string statusLine = "500 Internal Server Error";
-
-        if (std::string(e.what()) == "CGI timeout")
-        {
-            statusCode = "504";
-            statusLine = "504 Gateway Timeout";
-        }
-        std::string errorPath = router.buildErrorResponsePath(config, statusCode);
-        client.setResponse(response.build(req, errorPath, statusLine));
-        client.setState(Client::WRITING);
-        fds[idx].events = POLLIN | POLLOUT;
-        return true;
-    }
+    std::unique_ptr<CgiHandler> cgiHandler(new CgiHandler(req, *location));
+    pid_t pid = cgiHandler->start();
+    //starts the CGI
+    cgiHandler->writeBody();
+    //writing body POST /test.py
+    int pipeFd = cgiHandler->getPipeFd();
+    //getting pipe fd pipefd = 5
+    fcntl(pipeFd, F_SETFL, O_NONBLOCK);
+    CgiProcess process;
+    process.pid = pid;
+    process.pipeFd = pipeFd;
+    process.clientFd = fds[idx].fd;
+    process.clientIdx = idx;
+    process.startTime = time(NULL);
+    process.output = "";
+    process.server = config;
+    //fils the information for the server to handle the CGI
+    process.handler = std::move(cgiHandler);
+    _cgiProcesses[pipeFd] = std::move(process);
+    pollfd cgiPoll;
+    cgiPoll.fd = pipeFd;
+    cgiPoll.events = POLLIN;
+    cgiPoll.revents = 0;
+    fds.push_back(cgiPoll);
+    fds[idx].events = 0;
+    //while CGI is running, Clients socket should be not touched
+    return (true);
 }
 void ServerMaster::handleClient(int fd, size_t &idx)
 {
@@ -114,7 +94,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     //getting the config of the server
     std::string root = config->root_path;
     std::string index = config->index;
-
     if (!parseOk)
     { 
         std::string statusCode = "400";
@@ -196,7 +175,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
             filePath = router.buildErrorResponsePath(config, statusCode);
         }
     }
-
     // If request failed, try to serve a configured error page for the status code
     // Redirects are handled separately and must not be converted into error pages
     if (statusCode[0] != '2' && statusCode[0] != '3')
@@ -216,7 +194,6 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     //Check for the autoindex. If its on, then creates the HTML
     HTTPResponse response;
     std::string extraHeaders;
-
     if (statusCode == "302" && !router.getRedirectPath().empty())
         extraHeaders = "Location: " + router.getRedirectPath() + "\r\n";
     std::string statusLine = statusCode;
@@ -239,11 +216,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     }
     //if directory requested then we're creating the HTTP response
     else
-    {
-        client.setResponse(
-            response.build(req, filePath, statusLine, extraHeaders)
-        );
-    }
+        client.setResponse(response.build(req, filePath, statusLine, extraHeaders));
     //if requested path is not an directory then we're building a response
     client.setState(Client::WRITING);
     fds[idx].events = POLLIN | POLLOUT;
@@ -258,84 +231,61 @@ bool Client::processRequest()
 }
 void ServerMaster::handleCgiOutput(int pipeFd)
 {
+    //finding the CGI Process by its pipe file discriptor
     std::map<int, CgiProcess>::iterator it;
     it = _cgiProcesses.find(pipeFd);
 
     if (it == _cgiProcesses.end())
         return;
-
     CgiProcess &process = it->second;
-
     char buff[4096];
-
     while (true)
     {
         ssize_t bytes = read(pipeFd, buff, sizeof(buff));
-
         if (bytes > 0)
         {
             process.output.append(buff, bytes);
             continue;
         }
-
+        //if data is recived, add it to the CGI output
         if (bytes == 0)
             break;
 
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
-
+        //if theres no more data wait for the next poll event
         break;
     }
 
     int status;
     pid_t res = waitpid(process.pid, &status, WNOHANG);
-
     if (res == 0)
         return;
-
+    //if the CGI is still running, wait for the next poll event
     if (res == -1)
     {
         perror("waitpid");
         return;
     }
-
     std::map<int, std::unique_ptr<Client> >::iterator clientIt;
     clientIt = clients.find(process.clientFd);
-
+    //finds the client that started CGI
     if (clientIt != clients.end())
     {
         Client &client = *clientIt->second;
         HTTPRequest &req = client.getRequest();
         HTTPResponse response;
-
+    //if client still exists, prepare for the HTTP response
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         {
             Router router;
-
             std::string errorPath;
             errorPath = router.buildErrorResponsePath(process.server, "500");
-
-            client.setResponse(
-                response.build(
-                    req,
-                    errorPath,
-                    "500 Internal Server Error"
-                )
-            );
+            client.setResponse(response.build(req,errorPath,"500 Internal Server Error"));
         }
         else
-        {
-            client.setResponse(
-                response.buildCgiResponse(
-                    req,
-                    "200 OK",
-                    process.output
-                )
-            );
-        }
-
+            client.setResponse(response.buildCgiResponse(req,"200 OK",process.output));
         client.setState(Client::WRITING);
-
         for (size_t i = 0; i < fds.size(); i++)
         {
             if (fds[i].fd == process.clientFd)
@@ -345,11 +295,9 @@ void ServerMaster::handleCgiOutput(int pipeFd)
             }
         }
     }
-
     process.handler->releasePipeOut();
-
     close(pipeFd);
-
+    //if CGI is finished, then its no longer owns a pipe
     for (size_t i = 0; i < fds.size(); i++)
     {
         if (fds[i].fd == pipeFd)
@@ -358,6 +306,5 @@ void ServerMaster::handleCgiOutput(int pipeFd)
             break;
         }
     }
-
     _cgiProcesses.erase(it);
 }

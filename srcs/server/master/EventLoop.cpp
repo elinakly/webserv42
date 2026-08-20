@@ -97,17 +97,13 @@ void ServerMaster::pollLoop()
         {
             if (time(NULL) - client._lastActivity > 30)
             {
-                std::cout << "HTTP TIMEOUT: " << fds[i].fd << std::endl;
-
                 HTTPRequest &req = client.getRequest();
                 HTTPResponse response;
                 Router router;
 
                 Server *config = listenSockets[client.getServerFd()];
 
-                std::string errorPath =
-                    router.buildErrorResponsePath(config, "408");
-
+                std::string errorPath =router.buildErrorResponsePath(config, "408");
                 client.setResponse(response.build(req,errorPath,"408 Request Timeout"));
                 client.setState(Client::WRITING);
                 fds[i].events = POLLOUT;
@@ -123,9 +119,6 @@ void ServerMaster::pollLoop()
 
         if (time(NULL) - process.startTime >= 10)
         {
-            std::cout << "CGI TIMEOUT: PID = "
-                    << process.pid << std::endl;
-
             kill(process.pid, SIGKILL);
             waitpid(process.pid, NULL, 0);
 
@@ -141,7 +134,6 @@ void ServerMaster::pollLoop()
                     break;
                 }
             }
-
             std::map<int, std::unique_ptr<Client> >::iterator clientIt;
             clientIt = clients.find(process.clientFd);
 
@@ -152,21 +144,12 @@ void ServerMaster::pollLoop()
 
                 Router router;
                 HTTPResponse response;
-
                 Server *config;
                 config = listenSockets[client.getServerFd()];
-
                 std::string errorPath;
                 errorPath = router.buildErrorResponsePath(config, "504");
 
-                client.setResponse(
-                    response.build(
-                        req,
-                        errorPath,
-                        "504 Gateway Timeout"
-                    )
-                );
-
+                client.setResponse(response.build(req,errorPath,"504 Gateway Timeout"));
                 client.setState(Client::WRITING);
 
                 for (size_t i = 0; i < fds.size(); i++)
@@ -178,7 +161,6 @@ void ServerMaster::pollLoop()
                     }
                 }
             }
-
             it = _cgiProcesses.erase(it);
         }
         else

@@ -23,7 +23,4 @@ void ServerMaster::sendResponse(int fd)
     }
 
     client.addBytesSent(bytes);
-
-    if (client.getBytesSent() >= total)
-        client.setState(Client::DONE);
 }
