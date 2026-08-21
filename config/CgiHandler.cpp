@@ -1,4 +1,5 @@
 #include "CgiHandler.hpp"
+#include "HttpRequest.hpp"
 
 void	CgiHandler::writeBody()
 {
@@ -70,7 +71,7 @@ void	CgiHandler::setEnv()
 		query = _request.getPath().substr(pos + 1);
 	_env["QUERY_STRING"] = query;
 	_env["CONTENT_LENGTH"] = std::to_string(_body.size());
-	_env["CONTENT_TYPE"] = "";
+	_env["CONTENT_TYPE"] = _request.getHeader("Content-Type");
 	std::string pathInfo = _request.getPath();
 
 	size_t queryPos = pathInfo.find('?');

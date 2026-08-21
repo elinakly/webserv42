@@ -95,25 +95,9 @@ std::string Router::routeRequest(const HTTPRequest& req, Server* config)
     if (_statusCode == "200")
     {
         if (req.getMethod() == "POST")
-        {
-            std::string upload = requestPath;
-            if (location)
-            {
-                const std::string &locPath = location->getPath();
-                if (locPath != "/" && upload.find(locPath) == 0)
-                {
-                    upload.erase(0, locPath.length());
-                    if (upload.empty())
-                        upload = "/";
-                }
-            }
-            filePath = root + upload;
-        //if its post then we're creating the path to get the post
-        }
+            filePath = root + requestPath;
         else
-        {
             filePath = buildFilePath(root, requestPath, index, location);
-        }
         //if its GET then we're checking the file of itself
     }
     return filePath;

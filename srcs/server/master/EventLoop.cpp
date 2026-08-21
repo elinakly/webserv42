@@ -102,7 +102,6 @@ void ServerMaster::pollLoop()
                 Router router;
 
                 Server *config = listenSockets[client.getServerFd()];
-
                 std::string errorPath =router.buildErrorResponsePath(config, "408");
                 client.setResponse(response.build(req,errorPath,"408 Request Timeout"));
                 client.setState(Client::WRITING);

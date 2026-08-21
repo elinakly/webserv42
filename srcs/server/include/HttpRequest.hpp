@@ -23,6 +23,7 @@ class HTTPRequest {
         const std::string	getBody() const {return(_body);};
         const std::string	getRequest() const {return(_req);};
         const std::string getUri()const {return(_uri);};
+		std::string getHeader(const std::string& key) const;
         HTTPRequest() ;
 		~HTTPRequest() = default;
 		HTTPRequest(std::string &string);

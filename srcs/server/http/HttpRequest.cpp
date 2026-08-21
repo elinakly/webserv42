@@ -90,4 +90,15 @@ bool HTTPRequest::parse()
 	}
 	return(true);
 }
+std::string HTTPRequest::getHeader(const std::string& key) const
+{
+    std::map<std::string, std::string>::const_iterator it;
+
+    it = _headers.find(key);
+
+    if (it == _headers.end())
+        return "";
+
+    return it->second;
+}
 
