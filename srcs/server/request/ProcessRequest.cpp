@@ -204,7 +204,7 @@ void ServerMaster::handleClient(int fd, size_t &idx)
     {
         std::string rawResponse;
 
-        rawResponse += "HTTP/1.1 200 OK\r\n";
+        rawResponse += "HTTP/1.0 200 OK\r\n";
         rawResponse += "Content-Type: text/html\r\n";
         rawResponse += "Content-Length: ";
         rawResponse += std::to_string(dirBody.size());

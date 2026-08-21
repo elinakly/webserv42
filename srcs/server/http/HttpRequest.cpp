@@ -70,7 +70,7 @@ bool HTTPRequest::parse()
 		if (!lineReader.eof())
 			body += "\n";
 	}
-	if (_version == "HTTP/1.1")
+	if (_version == "HTTP/1.0")
 		if (_headers.find("Host") == _headers.end())
 			return (false);
 	//placing it in the body

@@ -58,8 +58,8 @@ CgiHandler::~CgiHandler()
 }
 void	CgiHandler::setEnv()
 {
-	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-	_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+	_env["GATEWAY_INTERFACE"] = "CGI/1.0";
+	_env["SERVER_PROTOCOL"] = "HTTP/1.0";
 	_env["SERVER_SOFTWARE"] = "webserv/1.0";
 	_env["REQUEST_METHOD"] = _method;
 	_env["PATH_TRANSLATED"] = _path;

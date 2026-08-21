@@ -60,4 +60,4 @@ make re
 - [config/config.conf](config/config.conf) - used as the default runtime configuration and as a reference for server blocks, routes, CGI, and error pages.
 - [MDN HTTP overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview) - useful for understanding HTTP requests, responses, methods, and status codes implemented by the server.
 - [cppreference](https://en.cppreference.com/) - useful while implementing and reviewing the C++ standard library features used throughout the server code.
-- [HTTP/1.1 semantics](https://www.rfc-editor.org/rfc/rfc9110) - useful for routing, response codes, redirects, and request handling behavior.
+- [HTTP/1.0 semantics](https://www.rfc-editor.org/rfc/rfc9110) - useful for routing, response codes, redirects, and request handling behavior.
